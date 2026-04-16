@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+{% block title %}Add Investment — InvestPro{% endblock %}
+{% block page_title %}Add Investment{% endblock %}
+
+{% block head %}
+<style>
+/* === FULL WIDTH FORM === */
+.add-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+}
+
+.form-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.form-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+/* Larger inputs */
+.form-control {
+    font-size: 15px!important;
+    padding: 14px 16px!important;
+}
+
+.amount-input-wrap { position: relative; }
+.amount-prefix {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent-gold);
+}
+.amount-input {
+    padding-left: 40px!important;
+    font-size: 22px!important;
+    font-family: 'Syne', sans-serif!important;
+    font-weight: 700!important;
+}
+
+.cat-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+.cat-option {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.cat-option:hover { border-color: var(--border-light); background: var(--bg-hover); }
+.cat-option.selected { border-color: var(--accent-blue); background: rgba(79,142,247,0.08); }
+.cat-option-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+.cat-option-check { margin-left: auto; color: var(--accent-blue); display: none; font-size: 16px; }
+.cat-option.selected.cat-option-check { display: block; }
+
+.wallet-info {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-family: 'Syne', sans-serif;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+.quick-amounts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+.quick-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Syne', sans-serif;
+}
+.quick-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(255,184,0.05); }
+
+.success-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.success-overlay.open { display: flex; }
+.success-box {
+    background: var(--bg-card);
+    border: 1px solid rgba(0,229,160,0.3);
+    border-radius: 24px;
+    padding: 48px 40px;
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+    animation: modalIn 0.4s ease;
+}
+.success-icon { font-size: 60px; margin-bottom: 20px; display: block; animation: bounceIn 0.6s ease; }
+@keyframes bounceIn {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+.success-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+.success-amt { font-size: 36px; font-weight: 800; font-family: 'Syne', sans-serif; color: var(--accent-green); margin: 16px 0; }
+.success-btns { display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+
+/* === MOBILE RESPONSIVE === */
+@media (max-width: 768px) {
+.form-card { padding: 24px; }
+.form-title { font-size: 19px; }
+.form-row { grid-template-columns: 1fr; }
+.cat-picker { grid-template-columns: 1fr; }
+.amount-input { font-size: 20px!important; }
+}
+
+@media (max-width: 480px) {
+.form-card { padding: 18px; border-radius: 16px; }
+.form-title { font-size: 17px; }
+.amount-input { font-size: 18px!important; padding-left: 36px!important; }
+.quick-amounts { gap: 6px; }
+.quick-btn { padding: 6px 10px; font-size: 12px; }
+.success-box { padding: 32px 20px; }
+.success-btns { flex-direction: column; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="add-container">
+    <!-- FORM ONLY - FULL WIDTH -->
+    <div class="form-card fade-in-up">
+        <div class="form-title">New Investment Entry</div>
+        <div class="form-subtitle">Record your investment across any category</div>
+
+        <form id="investmentForm">
+            <!-- Category Picker -->
+            <div class="form-group">
+                <div class="form-label">Select Category</div>
+                <div class="cat-picker" id="catPicker">
+                    <div class="loading-state"><div class="spinner"></div></div>
+                </div>
+                <input type="hidden" id="categoryId" required>
+            </div>
+
+            <!-- Amount + Wallet -->
+            <div class="form-row">
+                <div class="form-group">
+                    <div class="form-label">Investment Amount</div>
+                    <div class="amount-input-wrap">
+                        <span class="amount-prefix">₹</span>
+                        <input type="number" id="amount" class="form-control amount-input" placeholder="0.00" step="0.01" min="1" required>
+                    </div>
+                    <div class="quick-amounts">
+                        <button type="button" class="quick-btn" onclick="setAmount(500)">₹500</button>
+                        <button type="button" class="quick-btn" onclick="setAmount(1000)">₹1K</button>
+                        <button type="button" class="quick-btn" onclick="setAmount(5000)">₹5K</button>
+                        <button type="button" class="quick-btn" onclick="setAmount(10000)">₹10K</button>
+                        <button type="button" class="quick-btn" onclick="setAmount(25000)">₹25K</button>
+                        <button type="button" class="quick-btn" onclick="setAmount(50000)">₹50K</button>
+                        <button type="button" class="quick-btn" onclick="setAmount(100000)">₹1L</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">From Wallet</div>
+                    <select id="walletId" class="form-control" required>
+                        <option value="">Loading wallets...</option>
+                    </select>
+                    <div class="wallet-info" id="walletBalance"></div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <div class="form-label">Investment Date</div>
+                    <input type="date" id="investmentDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Description</div>
+                    <input type="text" id="description" class="form-control" placeholder="e.g. Monthly SIP, Physical Gold...">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-label">Notes (Optional)</div>
+                <textarea id="notes" class="form-control" placeholder="Any additional notes about this investment..." rows="3"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-gold submit-btn" id="submitBtn">
+                <i class="fas fa-plus-circle"></i>
+                Record Investment
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="successOverlay">
+    <div class="success-box">
+        <span class="success-icon">🎉</span>
+        <div class="success-title">Investment Recorded!</div>
+        <div style="color:var(--text-secondary);font-size:14px">Successfully added to your portfolio</div>
+        <div class="success-amt" id="successAmt">₹0</div>
+        <div style="font-size:13px;color:var(--text-muted)" id="successCat">in —</div>
+        <div class="success-btns">
+            <button class="btn btn-ghost" onclick="closeSuccess()"><i class="fas fa-plus"></i> Add Another</button>
+            <a href="/" class="btn btn-primary"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let categories = [];
+let wallets = [];
+let selectedCatId = null;
+
+// Set today's date
+document.getElementById('investmentDate').value = new Date().toISOString().split('T')[0];
+
+function setAmount(val) {
+    document.getElementById('amount').value = val;
+    checkBalance();
+}
+
+function checkBalance() {
+    const walletId = document.getElementById('walletId').value;
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const wallet = wallets.find(w => w.id == walletId);
+
+    if (wallet) {
+        const balEl = document.getElementById('walletBalance');
+        if (amount > wallet.balance) {
+            balEl.innerHTML = `<span style="color:var(--accent-red)">Insufficient: ₹${Math.round(wallet.balance).toLocaleString('en-IN')} available</span>`;
+        } else {
+            balEl.innerHTML = `Balance: ₹${Math.round(wallet.balance).toLocaleString('en-IN')} → ₹${Math.round(wallet.balance - amount).toLocaleString('en-IN')} after`;
+        }
+    }
+}
+
+async function loadData() {
+    try {
+        const [catRes, walletRes] = await Promise.all([
+            fetch('/api/dashboard-stats'),
+            fetch('/api/wallets')
+        ]);
+
+        if (!catRes.ok ||!walletRes.ok) throw new Error('Failed to load data');
+
+        const catData = await catRes.json();
+        const walletData = await walletRes.json();
+
+        categories = catData.categories;
+        wallets = walletData.wallets || [];
+
+        console.log('Categories loaded:', categories);
+        console.log('Wallets loaded:', wallets);
+
+        renderCatPicker();
+        renderWalletSelect();
+
+    } catch(e) {
+        console.error(e);
+        showToast('Failed to load data: ' + e.message, 'error');
+        document.getElementById('catPicker').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Failed to load</p></div>';
+    }
+}
+
+function renderWalletSelect() {
+    const select = document.getElementById('walletId');
+    if (wallets.length === 0) {
+        select.innerHTML = '<option value="">No wallets found</option>';
+        return;
+    }
+    select.innerHTML = wallets.map(w =>
+        `<option value="${w.id}" ${w.is_default? 'selected' : ''}>${w.name} — ₹${Math.round(w.balance).toLocaleString('en-IN')}</option>`
+    ).join('');
+    checkBalance();
+}
+
+function renderCatPicker() {
+    const picker = document.getElementById('catPicker');
+    if (categories.length === 0) {
+        picker.innerHTML = '<div class="empty-state"><i class="fas fa-layer-group"></i><p>No categories yet</p></div>';
+        return;
+    }
+    picker.innerHTML = categories.map(cat => {
+        const icon = cat.icon || 'fas fa-wallet';
+        const color = cat.color || '#6366F1';
+        const bg = `${color}20`;
+        return `<div class="cat-option" data-id="${cat.id}" onclick="selectCat(${cat.id})">
+            <div class="cat-option-icon" style="background:${bg};color:${color}">
+                <i class="${icon}"></i>
+            </div>
+            <div>
+                <div style="font-size:14px;font-weight:600">${cat.name}</div>
+                <div style="font-size:11px;color:var(--text-muted)">${formatCurrency(cat.total)} · ${cat.count} entries</div>
+            </div>
+            <i class="fas fa-check-circle cat-option-check"></i>
+        </div>`;
+    }).join('');
+}
+
+function selectCat(id) {
+    selectedCatId = id;
+    document.getElementById('categoryId').value = id;
+    document.querySelectorAll('.cat-option').forEach(el => {
+        el.classList.toggle('selected', parseInt(el.dataset.id) === id);
+    });
+}
+
+document.getElementById('walletId').addEventListener('change', checkBalance);
+document.getElementById('amount').addEventListener('input', checkBalance);
+
+document.getElementById('investmentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!selectedCatId) { showToast('Please select a category', 'error'); return; }
+
+    const walletId = document.getElementById('walletId').value;
+    if (!walletId) { showToast('Please select a wallet', 'error'); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.innerHTML = '<div class="spinner"></div> Saving...';
+    btn.disabled = true;
+
+    const payload = {
+        category_id: selectedCatId,
+        wallet_id: parseInt(walletId),
+        amount: parseFloat(document.getElementById('amount').value),
+        description: document.getElementById('description').value,
+        investment_date: document.getElementById('investmentDate').value,
+        notes: document.getElementById('notes').value
+    };
+
+    try {
+        const res = await fetch('/api/investments', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            const cat = categories.find(c => c.id == selectedCatId);
+            document.getElementById('successAmt').textContent = formatCurrencyFull(payload.amount);
+            document.getElementById('successCat').textContent = 'in ' + (cat? cat.name : '—');
+            document.getElementById('successOverlay').classList.add('open');
+        } else {
+            showToast(data.message || 'Failed to save investment', 'error');
+        }
+    } catch(err) {
+        showToast('Error: ' + err.message, 'error');
+    } finally {
+        btn.innerHTML = '<i class="fas fa-plus-circle"></i> Record Investment';
+        btn.disabled = false;
+    }
+});
+
+function closeSuccess() {
+    document.getElementById('successOverlay').classList.remove('open');
+    document.getElementById('investmentForm').reset();
+    document.getElementById('investmentDate').value = new Date().toISOString().split('T')[0];
+    selectedCatId = null;
+    document.querySelectorAll('.cat-option').forEach(el => el.classList.remove('selected'));
+    loadData();
+}
+
+loadData();
+</script>
+{% endblock %}
