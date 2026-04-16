@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — XpenzThozha</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg:        #08080E;
+            --bg-card:   #111119;
+            --bg-input:  #0E0E17;
+            --border:    #232330;
+            --border-focus: #4F8EF7;
+            --text:      #F0F0FF;
+            --text-sub:  #8888AA;
+            --text-muted:#444458;
+            --gold:      #FFB800;
+            --green:     #00E5A0;
+            --blue:      #4F8EF7;
+            --purple:    #9B59F5;
+            --danger:    #FF4757;
+            --orange:    #FF6B35;
+            --cyan:      #00C8FF;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ── Animated background ── */
+        .bg-canvas {
+            position: fixed; inset: 0; z-index: 0; overflow: hidden;
+        }
+        .orb {
+            position: absolute; border-radius: 50%;
+            filter: blur(90px); opacity: 0.22; animation: drift linear infinite;
+        }
+        .orb-1 { width:550px; height:550px; background:var(--blue); top:-15%; left:-10%; animation-duration:22s; }
+        .orb-2 { width:450px; height:450px; background:var(--purple); bottom:-10%; right:-5%;  animation-duration:18s; animation-delay:-7s; }
+        .orb-3 { width:350px; height:350px; background:var(--orange); top:40%;   left:55%;    animation-duration:26s; animation-delay:-12s; opacity:0.15; }
+        @keyframes drift {
+            0%,100% { transform: translate(0,0) scale(1) rotate(0deg); }
+            33%      { transform: translate(40px,-50px) scale(1.1) rotate(120deg); }
+            66%      { transform: translate(-30px,40px) scale(0.9) rotate(240deg); }
+        }
+
+        /* Grid pattern overlay */
+/* Grid pattern overlay */
+.bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 52px 52px;
+}
+
+        /* ── Split layout ── */
+        .split {
+            position: relative; z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr 500px;
+            width: 100%; min-height: 100vh;
+        }
+
+        /* ── Left panel ── */
+        .left-panel {
+            display: flex; flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 40px 72px 40px;
+            position: relative;
+            min-height: 100vh;
+        }
+        .brand {
+            display: flex; align-items: center; gap: 0;
+            margin-bottom: 36px;
+        }
+        .brand-logo {
+            height: 130px;
+            filter: drop-shadow(0 4px 24px rgba(0,200,255,0.35));
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+        @keyframes logoGlow {
+            0%,100% { filter: drop-shadow(0 4px 24px rgba(0,200,255,0.35)); }
+            50% { filter: drop-shadow(0 6px 32px rgba(255,107,53,0.45)); }
+        }
+
+        .hero-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hero-headline {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(36px, 3.8vw, 54px);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -2.5px;
+            margin-bottom: 18px;
+        }
+        .hero-headline .line-orange { 
+            background: linear-gradient(135deg, var(--orange), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-headline .line-cyan { 
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-headline .line-dim  { color: var(--text-sub); }
+
+        .hero-desc {
+            font-size: 14px; color: var(--text-sub); line-height: 1.7;
+            max-width: 440px; margin-bottom: 32px;
+        }
+
+        .feature-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
+        .feature-item {
+            display: flex; align-items: center; gap: 14px;
+            font-size: 13px; color: var(--text-sub);
+            transition: transform 0.2s;
+        }
+        .feature-item:hover { transform: translateX(4px); }
+        .feature-chip {
+            width: 38px; height: 38px; border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; flex-shrink: 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+        .chip-cyan   { background: linear-gradient(135deg, rgba(0,200,255,0.2), rgba(79,142,247,0.15));  color: var(--cyan); }
+        .chip-orange { background: linear-gradient(135deg, rgba(255,107,53,0.2), rgba(255,184,0,0.15));  color: var(--orange); }
+        .chip-green  { background: linear-gradient(135deg, rgba(0,229,160,0.2), rgba(0,200,120,0.15));  color: var(--green); }
+        .chip-purple { background: linear-gradient(135deg, rgba(155,89,245,0.2), rgba(120,60,220,0.15)); color: var(--purple); }
+
+        /* Floating ticker */
+        .ticker-strip {
+            display: flex; gap: 12px; flex-wrap: wrap;
+        }
+        .ticker-pill {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 8px 16px;
+            font-size: 12px;
+            display: flex; align-items: center; gap: 7px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+        .ticker-pill:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-2px);
+        }
+        .ticker-dot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+
+        /* ── Right panel (login form) ── */
+        .right-panel {
+            display: flex; align-items: center; justify-content: center;
+            padding: 32px 48px;
+            border-left: 1px solid var(--border);
+            background: rgba(8,8,14,0.7);
+            backdrop-filter: blur(24px);
+            position: relative;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+        .right-panel::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--blue), var(--cyan), transparent);
+            opacity: 0.5;
+        }
+
+        .login-box {
+            width: 100%; max-width: 380px;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(32px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-header { margin-bottom: 32px; text-align: center; }
+        .form-logo {
+            height: 100px;
+            margin: 0 auto 16px;
+            filter: drop-shadow(0 4px 20px rgba(0,200,255,0.3));
+        }
+        .login-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px; font-weight: 800; letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--text), var(--text-sub));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .login-subtitle { font-size: 13px; color: var(--text-sub); }
+
+        /* Form */
+        .form-group { margin-bottom: 18px; }
+        .form-label {
+            display: block;
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .input-wrap { position: relative; }
+        .input-icon {
+            position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); font-size: 15px; pointer-events: none;
+            transition: all 0.25s;
+        }
+        .form-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 13px 46px 13px 44px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .form-input::placeholder { color: var(--text-muted); }
+        .form-input:focus {
+            border-color: var(--blue);
+            background: rgba(79,142,247,0.03);
+            box-shadow: 0 0 0 4px rgba(79,142,247,0.08);
+        }
+        .form-input:focus + .input-icon,
+        .input-wrap:focus-within .input-icon { 
+            color: var(--blue); 
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .toggle-pw {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); cursor: pointer; font-size: 15px;
+            background: none; border: none;
+            transition: color 0.2s;
+            padding: 4px;
+        }
+        .toggle-pw:hover { color: var(--blue); }
+
+        .forgot-link {
+            text-align: right;
+            margin-top: 8px;
+        }
+        .forgot-link a {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .forgot-link a:hover {
+            color: var(--cyan);
+        }
+
+        /* Error alert */
+        .error-alert {
+            background: linear-gradient(135deg, rgba(255,71,87,0.1), rgba(255,71,87,0.05));
+            border: 1.5px solid rgba(255,71,87,0.3);
+            border-radius: 11px;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: var(--danger);
+            display: flex; align-items: center; gap: 11px;
+            margin-bottom: 20px;
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            10%,30%,50%,70%,90% { transform: translateX(-8px); }
+            20%,40%,60%,80% { transform: translateX(8px); }
+        }
+
+        /* Login button */
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Syne', sans-serif;
+            font-size: 15px; font-weight: 700;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 9px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 6px 24px rgba(79,142,247,0.35);
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-btn::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .login-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .login-btn:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 10px 36px rgba(79,142,247,0.45); 
+        }
+        .login-btn:hover::before { opacity: 1; }
+        .login-btn:active { transform: translateY(-1px); }
+        .login-btn:active::after {
+            width: 300px; height: 300px;
+        }
+        .login-btn.loading { pointer-events: none; opacity: 0.85; }
+        .btn-spinner {
+            width: 18px; height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        .login-btn.loading .btn-spinner { display: block; }
+        .login-btn.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Signup button */
+        .signup-divider {
+            display: flex; align-items: center; gap: 14px;
+            margin: 24px 0 20px;
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+        .signup-divider::before,
+        .signup-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+        .signup-btn {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            color: var(--text);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-family: 'Syne', sans-serif;
+            font-size: 15px; font-weight: 700;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 9px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            text-decoration: none;
+        }
+        .signup-btn:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--blue);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(79,142,247,0.15);
+        }
+
+        /* Footer note */
+        .login-footer {
+            margin-top: 28px; text-align: center;
+            font-size: 11px; color: var(--text-muted);
+            line-height: 1.6;
+            padding-bottom: 10px;
+        }
+        .login-footer a { 
+            color: var(--blue); 
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .login-footer a:hover { color: var(--cyan); }
+
+        /* ── Responsive ── */
+        @media (max-width: 960px) {
+            .split { grid-template-columns: 1fr; }
+            .left-panel { display: none; }
+            .right-panel { border-left: none; padding: 40px 32px; min-height: 100vh; }
+            .login-box { max-width: 420px; }
+        }
+        @media (max-width: 480px) {
+            .right-panel { padding: 32px 24px; }
+            .login-title { font-size: 24px; }
+            .form-logo { height: 75px; }
+            .brand-logo { height: 90px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="bg-canvas">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+<div class="bg-grid"></div>
+
+<div class="split">
+    <!-- ══ LEFT PANEL ══ -->
+    <div class="left-panel">
+        <div class="brand">
+            <img src="static/logo.png" alt="XpenzThozha" class="brand-logo">
+        </div>
+
+        <div class="hero-content">
+            <h1 class="hero-headline">
+                <span class="line-dim">Track every</span><br>
+                <span class="line-orange">Rupee you</span> <span class="line-cyan">spend</span><br>
+                <span>& invest.</span>
+            </h1>
+
+            <p class="hero-desc">
+                Welcome back to XpenzThozha — manage daily expenses and grow investments like Gold, SIP, Silver & PPF. 
+                Your complete financial dashboard, secure and private.
+            </p>
+
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-chip chip-cyan"><i class="fas fa-wallet"></i></div>
+                    <span>Track expenses & investments in one dashboard</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-chip chip-orange"><i class="fas fa-chart-pie"></i></div>
+                    <span>Smart expense categories + portfolio allocation charts</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-chip chip-green"><i class="fas fa-chart-line"></i></div>
+                    <span>Monthly spending insights & 6-month investment trends</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-chip chip-purple"><i class="fas fa-lock"></i></div>
+                    <span>Bank-grade security — your data stays encrypted</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="ticker-strip">
+            <div class="ticker-pill">
+                <div class="ticker-dot" style="background:#FF6B35"></div>
+                Expenses
+            </div>
+            <div class="ticker-pill">
+                <div class="ticker-dot" style="background:#00E5A0"></div>
+                SIP
+            </div>
+            <div class="ticker-pill">
+                <div class="ticker-dot" style="background:#FFB800"></div>
+                Gold
+            </div>
+            <div class="ticker-pill">
+                <div class="ticker-dot" style="background:#9B59F5"></div>
+                PPF
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ RIGHT PANEL (FORM) ══ -->
+    <div class="right-panel">
+        <div class="login-box">
+            <div class="login-header">
+                <img src="static/logo.png" alt="XpenzThozha" class="form-logo">
+                <div class="login-title">Welcome back</div>
+                <div class="login-subtitle">Sign in to access your financial dashboard</div>
+            </div>
+
+            <!-- Error message -->
+            {% if error %}
+            <div class="error-alert">
+                <i class="fas fa-circle-exclamation"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username</label>
+                    <div class="input-wrap">
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            class="form-input"
+                            placeholder="Enter your username"
+                            value="{{ request.form.get('username', '') }}"
+                            autocomplete="username"
+                            required
+                            autofocus
+                        >
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-wrap">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-input"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <i class="fas fa-lock input-icon"></i>
+                        <button type="button" class="toggle-pw" id="togglePw" tabindex="-1">
+                            <i class="fas fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    <div class="forgot-link">
+                        <a href="/help">Forgot password?</a>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="btn-text"><i class="fas fa-arrow-right-to-bracket"></i> &nbsp;Sign In to Dashboard</span>
+                    <div class="btn-spinner"></div>
+                </button>
+            </form>
+
+            <div class="signup-divider">new here?</div>
+
+            <a href="/signup" class="signup-btn">
+                <i class="fas fa-user-plus"></i> &nbsp;Create New Account
+            </a>
+
+            <div class="login-footer">
+                Your expenses & investments are encrypted & never shared
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle password visibility
+    const togglePw = document.getElementById('togglePw');
+    const pwInput  = document.getElementById('password');
+    const eyeIcon  = document.getElementById('eyeIcon');
+    togglePw.addEventListener('click', () => {
+        const show = pwInput.type === 'password';
+        pwInput.type = show ? 'text' : 'password';
+        eyeIcon.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+    });
+
+    // Show spinner on submit
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        const btn = document.getElementById('loginBtn');
+        btn.classList.add('loading');
+    });
+
+    // Input focus animations
+    document.querySelectorAll('.form-input').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.01)';
+        });
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+{% block title %}Pricing — InvestPro{% endblock %}
+{% block page_title %}Subscription Plans{% endblock %}
+
+{% block head %}
+<style>
+.pricing-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* === CURRENT PLAN CARD === */
+.current-plan-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.current-plan-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+}
+
+.plan-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.plan-badge.trial {
+    background: rgba(79,142,247,0.15);
+    color: var(--accent-blue);
+}
+
+.plan-badge.active {
+    background: rgba(0,229,160,0.15);
+    color: var(--accent-green);
+}
+
+.plan-badge.expired {
+    background: rgba(255,71,87,0.15);
+    color: var(--danger);
+}
+
+.plan-name-large {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.plan-expiry {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.plan-expiry strong {
+    color: var(--text-primary);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 16px 0 6px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+    border-radius: 10px;
+    transition: width 0.3s;
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.pricing-header {
+    text-align: center;
+    margin: 40px 0 32px 0;
+}
+
+.pricing-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+}
+
+.pricing-subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 32px;
+}
+
+.pricing-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 22px;
+    position: relative;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent-blue);
+    box-shadow: 0 16px 32px rgba(0,0,0,0.25);
+}
+
+.pricing-card.popular {
+    border: 2px solid var(--accent-blue);
+    transform: scale(1.03);
+    box-shadow: 0 16px 32px rgba(79,142,247,0.15);
+}
+
+.pricing-card.popular:hover {
+    transform: scale(1.03) translateY(-6px);
+}
+
+.pricing-card.current {
+    border: 2px solid var(--accent-green);
+    box-shadow: 0 16px 32px rgba(0,229,160,0.15);
+}
+
+.popular-badge, .current-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+}
+
+.popular-badge {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+}
+
+.current-badge {
+    background: linear-gradient(135deg, var(--accent-green), #00C389);
+}
+
+.plan-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.plan-description {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-bottom: 20px;
+}
+
+.plan-price {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.price-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.75rem;
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.price-period {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px 0;
+    flex: 1;
+}
+
+.plan-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.plan-features li i {
+    color: var(--accent-green);
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.plan-button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    color: white;
+    box-shadow: 0 3px 12px rgba(79,142,247,0.3);
+}
+
+.plan-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79,142,247,0.4);
+}
+
+.plan-button:disabled {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.pricing-footer {
+    text-align: center;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+}
+
+.pricing-footer p {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 14px;
+}
+
+.guarantee-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.guarantee-badge i {
+    color: var(--accent-green);
+}
+
+@media (max-width: 768px) {
+    .pricing-title {
+        font-size: 1.75rem;
+    }
+    .pricing-card.popular {
+        transform: scale(1);
+    }
+    .pricing-card.popular:hover {
+        transform: translateY(-6px);
+    }
+    .price-amount {
+        font-size: 2.5rem;
+    }
+    .plan-name-large {
+        font-size: 1.25rem;
+    }
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pricing-container">
+    <!-- CURRENT SUBSCRIPTION DETAILS -->
+    <div class="current-plan-section">
+        {% if user.subscription_status == 'trial' %}
+        <div class="plan-badge trial">
+            <i class="fas fa-gift"></i> FREE TRIAL
+        </div>
+        {% elif user.is_subscription_valid() %}
+        <div class="plan-badge active">
+            <i class="fas fa-check-circle"></i> ACTIVE
+        </div>
+        {% else %}
+        <div class="plan-badge expired">
+            <i class="fas fa-exclamation-triangle"></i> EXPIRED
+        </div>
+        {% endif %}
+
+        <h2 class="plan-name-large">
+            {% if user.subscription_status == 'trial' %}
+                Free Trial
+            {% elif user.plan_type == '1month' %}
+                1 Month Plan
+            {% elif user.plan_type == '3month' %}
+                3 Months Plan
+            {% elif user.plan_type == '6month' %}
+                6 Months Plan
+            {% else %}
+                No Active Plan
+            {% endif %}
+        </h2>
+
+        <div class="plan-expiry">
+            {% if user.subscription_status == 'trial' %}
+                {% if trial_days_left > 0 and trial_end_date %}
+                    Your trial expires in <strong>{{ trial_days_left }} days</strong> on {{ trial_end_date.strftime('%d %B %Y') }}
+                {% else %}
+                    Your trial expired today
+                {% endif %}
+            {% elif user.subscription_end_date %}
+                {% if user.is_subscription_valid() %}
+                    Your plan renews on <strong>{{ user.subscription_end_date.strftime('%d %B %Y') }}</strong>
+                {% else %}
+                    Your plan expired on <strong>{{ user.subscription_end_date.strftime('%d %B %Y') }}</strong>
+                {% endif %}
+            {% else %}
+                You don't have an active subscription
+            {% endif %}
+        </div>
+
+        {% if user.subscription_status == 'trial' and trial_days_left > 0 and trial_end_date %}
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ ((30 - trial_days_left) / 30 * 100)|round }}%"></div>
+        </div>
+        <div class="progress-text">
+            <span>Day {{ 30 - trial_days_left }} of 30</span>
+            <span>{{ trial_days_left }} days remaining</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PRICING HEADER -->
+    <div class="pricing-header">
+        <h1 class="pricing-title">Upgrade Your Plan</h1>
+        <p class="pricing-subtitle">Choose a plan to unlock unlimited access and premium features</p>
+    </div>
+
+    <div class="pricing-grid">
+        {% for plan in plans %}
+        <div class="pricing-card {% if plan.id == '3month' %}popular{% endif %} {% if user.plan_type == plan.id and user.is_subscription_valid() %}current{% endif %}">
+            {% if user.plan_type == plan.id and user.is_subscription_valid() %}
+            <div class="current-badge">
+                <i class="fas fa-check" style="margin-right:4px;"></i>CURRENT PLAN
+            </div>
+            {% elif plan.id == '3month' %}
+            <div class="popular-badge">
+                <i class="fas fa-star" style="margin-right:4px;"></i>MOST POPULAR
+            </div>
+            {% endif %}
+            
+            <h3 class="plan-name">{{ plan.name }}</h3>
+            <p class="plan-description">
+                {% if plan.id == '1month' %}Perfect to get started{% endif %}
+                {% if plan.id == '3month' %}Best value for most users{% endif %}
+                {% if plan.id == '6month' %}Maximum savings{% endif %}
+            </p>
+            
+            <div class="plan-price">
+                <span class="price-amount">₹{{ plan.price }}</span>
+                <span class="price-period">/ {{ plan.duration }} days</span>
+            </div>
+            
+            <ul class="plan-features">
+                <li><i class="fas fa-check-circle"></i> Unlimited expense tracking</li>
+                <li><i class="fas fa-check-circle"></i> Investment portfolio management</li>
+                <li><i class="fas fa-check-circle"></i> Monthly breakdown reports</li>
+                <li><i class="fas fa-check-circle"></i> Multi-wallet support</li>
+                <li><i class="fas fa-check-circle"></i> Category analytics</li>
+                <li><i class="fas fa-check-circle"></i> Export data anytime</li>
+            </ul>
+            
+            <button class="plan-button" onclick="selectPlan('{{ plan.id }}', this)" {% if user.plan_type == plan.id and user.is_subscription_valid() %}disabled{% endif %}>
+                {% if user.plan_type == plan.id and user.is_subscription_valid() %}
+                    <i class="fas fa-check" style="margin-right:8px;"></i>Current Plan
+                {% else %}
+                    Choose {{ plan.name }}
+                {% endif %}
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="pricing-footer">
+        <p>All plans include unlimited access to every feature. Cancel anytime.</p>
+        <div class="guarantee-badge">
+            <i class="fas fa-shield-alt"></i>
+            <span>Secure payment • Instant activation • No hidden fees</span>
+        </div>
+        <p style="margin-top:20px;font-size:12px;">
+            Questions? <a href="mailto:support@xpense.com" style="color:var(--accent-blue);text-decoration:none;">Contact support</a> or ask admin to activate manually.
+        </p>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+async function selectPlan(planId, button) {
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    try {
+        const res = await fetch('/create-order', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({plan_id: planId})
+        });
+        const data = await res.json();
+        
+        if (!data.success) {
+            showToast(data.message || 'Failed to create order', 'error');
+            button.disabled = false;
+            button.innerHTML = originalText;
+            return;
+        }
+        
+        const options = {
+            key: data.key_id,
+            amount: data.amount,
+            currency: "INR",
+            name: "Xpenzthozha",  // <-- This forces brand name on popup
+            description: data.plan_name,
+            order_id: data.order_id,
+            prefill: {
+                name: data.user_name,
+                email: data.user_email
+            },
+            theme: {
+                color: "#4F8EF7"
+            },
+            handler: async function (response) {
+                showToast('Verifying payment...', 'info');
+                
+                const verifyRes = await fetch('/payment-success', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature
+                    })
+                });
+                const verifyData = await verifyRes.json();
+                
+                if (verifyData.success) {
+                    showToast('Payment successful! Refreshing...', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast(verifyData.message, 'error');
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            },
+            modal: {
+                ondismiss: function() {
+                    showToast('Payment cancelled', 'info');
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.open();
+        
+    } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+</script>
+{% endblock %}

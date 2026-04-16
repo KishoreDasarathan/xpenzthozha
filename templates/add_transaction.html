@@ -1,0 +1,802 @@
+{% extends "base.html" %}
+{% block title %}Add Transaction — InvestPro{% endblock %}
+{% block page_title %}Add Transaction{% endblock %}
+
+{% block head %}
+<style>
+/* === GLOBAL MOBILE FIX === */
+html, body {
+    overflow-x: hidden!important;
+    width: 100%;
+    max-width: 100vw;
+}
+* {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+/* === TABS === */
+.tab-wrap {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+}
+.tab-wrap::-webkit-scrollbar { display: none; }
+.tab-btn {
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.tab-btn.active {
+    color: var(--accent-blue);
+    border-bottom-color: var(--accent-blue);
+}
+.tab-content { display: none; width: 100%; }
+.tab-content.active { display: block; }
+
+/* === FORM === */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+}
+.form-group {
+    margin-bottom: 14px;
+    width: 100%;
+    min-width: 0;
+}
+.form-group.full { grid-column: 1/-1; }
+.form-label {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.form-input,.form-select,.form-textarea {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: inherit;
+    min-width: 0;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+.amount-input {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.wallet-info {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-family: 'Syne', sans-serif;
+    word-break: break-word;
+}
+
+/* === CATEGORY PICKER === */
+.cat-picker {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+}
+.cat-option {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 0;
+}
+.cat-option:hover { border-color: var(--border-light); background: var(--bg-hover); }
+.cat-option.selected { border-color: var(--accent-blue); background: rgba(79,142,247,0.08); }
+.cat-option-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.cat-option > div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+.cat-option-check {
+    margin-left: auto;
+    color: var(--accent-blue);
+    display: none;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+.cat-option.selected .cat-option-check { display: block; }
+
+.income-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+/* === TABLE MOBILE CARDS === */
+.table-wrap { display: none; }
+
+.mobile-income-list {
+    display: block;
+    width: 100%;
+}
+.income-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+.income-card:last-child { margin-bottom: 0; }
+.income-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+.income-card-row:last-child {
+    margin-bottom: 0;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+}
+.income-card-label {
+    font-size: 8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
+}
+.income-card-value {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    word-break: break-word;
+}
+.income-card-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--accent-green);
+    text-align: right;
+    flex-shrink: 0;
+}
+.income-card-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* === EMPTY STATE === */
+.empty-state {
+    text-align: center;
+    padding: 30px 15px;
+    color: var(--text-muted);
+}
+.empty-state i {
+    font-size: 24px;
+    margin-bottom: 6px;
+    opacity: 0.5;
+    display: block;
+}
+.empty-state p {
+    font-size: 12px;
+}
+
+/* === DESKTOP OVERRIDES === */
+@media (min-width: 641px) {
+   .form-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+   .cat-picker { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+   .tab-btn { padding: 12px 20px; font-size: 13px; }
+   .form-input,.form-select,.form-textarea { padding: 11px 14px; font-size: 13px; }
+   .amount-input { font-size: 16px; }
+   .form-label { font-size: 12px; }
+   .wallet-info { font-size: 11px; }
+   
+   /* Show table on desktop */
+   .mobile-income-list { display: none; }
+   .table-wrap {
+       display: block;
+       max-height: 400px;
+       overflow-y: auto;
+       overflow-x: auto;
+       -webkit-overflow-scrolling: touch;
+   }
+   table {
+       width: 100%;
+       border-collapse: collapse;
+       font-size: 12px;
+       min-width: 500px;
+   }
+   thead th {
+       background: var(--bg-secondary);
+       color: var(--text-muted);
+       font-weight: 600;
+       text-transform: uppercase;
+       font-size: 10px;
+       letter-spacing: 0.5px;
+       padding: 10px 12px;
+       text-align: left;
+       white-space: nowrap;
+   }
+   tbody td {
+       padding: 10px 12px;
+       border-bottom: 1px solid var(--border);
+       word-break: break-word;
+   }
+   tbody tr:hover { background: var(--bg-hover); }
+   tbody tr:last-child td { border-bottom: none; }
+   
+   .td-amount {
+       font-family: 'Syne', sans-serif;
+       font-weight: 700;
+       text-align: right;
+       white-space: nowrap;
+   }
+   .td-amount.positive { color: var(--accent-green); }
+   
+   .cat-option { padding: 16px; font-size: 14px; }
+   .cat-option-icon { width: 38px; height: 38px; font-size: 16px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card fade-in-up">
+    <div class="card-body">
+        <div class="tab-wrap">
+            <button class="tab-btn active" onclick="switchTab('income')">
+                <i class="fas fa-arrow-down"></i> Income
+            </button>
+            <button class="tab-btn" onclick="switchTab('investment')">
+                <i class="fas fa-chart-line"></i> Investment
+            </button>
+            <button class="tab-btn" onclick="switchTab('expense')">
+                <i class="fas fa-arrow-up"></i> Expense
+            </button>
+        </div>
+
+        <!-- INCOME TAB -->
+        <div class="tab-content active" id="income-tab">
+            <form id="incomeForm" onsubmit="submitIncome(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <input type="number" step="0.01" class="form-input amount-input" id="income_amount" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">To Wallet</label>
+                        <select class="form-select" id="income_wallet" required></select>
+                        <div class="wallet-info" id="income_wallet_info"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-input" id="income_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description (optional)</label>
+                        <input type="text" class="form-input" id="income_desc" placeholder="e.g. Salary, Freelance">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">
+                    <i class="fas fa-plus"></i> Add Income
+                </button>
+            </form>
+
+            <!-- Recent Incomes -->
+            <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border);">
+                <div class="form-label" style="margin-bottom:10px;">Recent Income</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Wallet</th>
+                                <th style="text-align:right;">Amount</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incomeTableBody">
+                            <tr><td colspan="5" class="loading-state"><div class="spinner"></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mobile-income-list" id="incomeMobileList"></div>
+            </div>
+        </div>
+
+        <!-- INVESTMENT TAB -->
+        <div class="tab-content" id="investment-tab">
+            <form id="investmentForm" onsubmit="submitInvestment(event)">
+                <div class="form-group">
+                    <div class="form-label">Select Investment Category</div>
+                    <div class="cat-picker" id="invCatPicker">
+                        <div class="loading-state"><div class="spinner"></div></div>
+                    </div>
+                    <input type="hidden" id="inv_category" required>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <input type="number" step="0.01" class="form-input amount-input" id="inv_amount" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">From Wallet</label>
+                        <select class="form-select" id="inv_wallet" required></select>
+                        <div class="wallet-info" id="inv_wallet_info"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-input" id="inv_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-input" id="inv_desc" placeholder="e.g. Apple Stock">
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Notes (optional)</label>
+                        <textarea class="form-textarea" id="inv_notes" rows="2"></textarea>
+                    </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">
+                    <i class="fas fa-plus"></i> Add Investment
+                </button>
+            </form>
+        </div>
+
+        <!-- EXPENSE TAB -->
+        <div class="tab-content" id="expense-tab">
+            <form id="expenseForm" onsubmit="submitExpense(event)">
+                <div class="form-group">
+                    <div class="form-label">Select Expense Category</div>
+                    <div class="cat-picker" id="expCatPicker">
+                        <div class="loading-state"><div class="spinner"></div></div>
+                    </div>
+                    <input type="hidden" id="exp_category" required>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <input type="number" step="0.01" class="form-input amount-input" id="exp_amount" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">From Wallet</label>
+                        <select class="form-select" id="exp_wallet" required></select>
+                        <div class="wallet-info" id="exp_wallet_info"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-input" id="exp_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-input" id="exp_desc" placeholder="e.g. Groceries, Rent">
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Notes (optional)</label>
+                        <textarea class="form-textarea" id="exp_notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">
+                    <i class="fas fa-plus"></i> Add Expense
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Income Modal -->
+<div class="modal-overlay" id="incomeModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Edit Income</div>
+            <button class="modal-close" onclick="closeIncomeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="incomeEditForm">
+            <input type="hidden" id="edit_income_id">
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" step="0.01" class="form-input" id="edit_income_amount" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Wallet</label>
+                <select class="form-select" id="edit_income_wallet" required></select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-input" id="edit_income_date" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-input" id="edit_income_desc">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">
+                <i class="fas fa-save"></i> Update Income
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let wallets = [], invCategories = [], expCategories = [], incomes = [];
+let selectedInvCat = null, selectedExpCat = null;
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    event.target.closest('.tab-btn').classList.add('active');
+    document.getElementById(tab + '-tab').classList.add('active');
+}
+
+function updateWalletInfo(prefix) {
+    const walletId = document.getElementById(prefix + '_wallet').value;
+    const amount = parseFloat(document.getElementById(prefix + '_amount').value) || 0;
+    const wallet = wallets.find(w => w.id == walletId);
+    const infoEl = document.getElementById(prefix + '_wallet_info');
+
+    if (wallet) {
+        if (prefix === 'income') {
+            infoEl.innerHTML = `Current: ₹${Math.round(wallet.balance).toLocaleString('en-IN')} → ₹${Math.round(wallet.balance + amount).toLocaleString('en-IN')} after`;
+        } else {
+            if (amount > wallet.balance) {
+                infoEl.innerHTML = `<span style="color:var(--danger)">Insufficient: ₹${Math.round(wallet.balance).toLocaleString('en-IN')} available</span>`;
+            } else {
+                infoEl.innerHTML = `Balance: ₹${Math.round(wallet.balance).toLocaleString('en-IN')} → ₹${Math.round(wallet.balance - amount).toLocaleString('en-IN')} after`;
+            }
+        }
+    } else {
+        infoEl.innerHTML = '';
+    }
+}
+
+async function loadData() {
+    try {
+        const [wRes, icRes, ecRes, incRes] = await Promise.all([
+            fetch('/api/wallets'),
+            fetch('/api/categories'),
+            fetch('/api/expense-categories'),
+            fetch('/api/incomes')
+        ]);
+
+        wallets = (await wRes.json()).wallets || [];
+        invCategories = await icRes.json() || [];
+        expCategories = await ecRes.json() || [];
+        incomes = await incRes.json() || [];
+
+        const walletOpts = wallets.map(w =>
+            `<option value="${w.id}" ${w.is_default? 'selected' : ''}>${w.name} — ₹${Math.round(w.balance).toLocaleString('en-IN')}</option>`
+        ).join('');
+
+        ['income_wallet', 'inv_wallet', 'exp_wallet', 'edit_income_wallet'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = walletOpts;
+        });
+
+        renderCatPicker('invCatPicker', invCategories, 'inv');
+        renderCatPicker('expCatPicker', expCategories, 'exp');
+
+        const today = new Date().toISOString().split('T')[0];
+        ['income_date', 'inv_date', 'exp_date'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = today;
+        });
+
+        ['income', 'inv', 'exp'].forEach(prefix => {
+            document.getElementById(prefix + '_wallet').addEventListener('change', () => updateWalletInfo(prefix));
+            document.getElementById(prefix + '_amount').addEventListener('input', () => updateWalletInfo(prefix));
+            updateWalletInfo(prefix);
+        });
+
+        renderIncomes();
+
+    } catch (e) {
+        showToast('Failed to load data', 'error');
+        console.error(e);
+    }
+}
+
+function renderIncomes() {
+    const tbody = document.getElementById('incomeTableBody');
+    const mobile = document.getElementById('incomeMobileList');
+    
+    if (!incomes.length) {
+        const empty = '<div class="empty-state"><i class="fas fa-receipt"></i><p>No income yet</p></div>';
+        tbody.innerHTML = `<tr><td colspan="5">${empty}</td></tr>`;
+        mobile.innerHTML = empty;
+        return;
+    }
+
+    tbody.innerHTML = incomes.slice(0, 10).map(i => `
+        <tr>
+            <td>${formatDate(i.income_date)}</td>
+            <td>${i.description || '—'}</td>
+            <td>${i.wallet_name}</td>
+            <td style="text-align:right;font-family:'Syne',sans-serif;font-weight:600;color:var(--accent-green);">
+                +${formatCurrencyFull(i.amount)}
+            </td>
+            <td>
+                <div class="income-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="editIncome(${i.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteIncome(${i.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+    
+    mobile.innerHTML = incomes.slice(0, 10).map(i => `
+        <div class="income-card">
+            <div class="income-card-row">
+                <div>
+                    <div class="income-card-label">Date</div>
+                    <div class="income-card-value">${formatDate(i.income_date)}</div>
+                </div>
+                <div class="income-card-amount">+${formatCurrencyFull(i.amount)}</div>
+            </div>
+            <div class="income-card-row">
+                <div style="flex: 1;">
+                    <div class="income-card-label">Description</div>
+                    <div class="income-card-value">${i.description || '—'}</div>
+                </div>
+                <div>
+                    <div class="income-card-label">Wallet</div>
+                    <div class="income-card-value">${i.wallet_name}</div>
+                </div>
+            </div>
+            <div class="income-card-row">
+                <div class="income-card-actions" style="width: 100%; justify-content: flex-end;">
+                    <button class="btn btn-ghost btn-sm" onclick="editIncome(${i.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteIncome(${i.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderCatPicker(containerId, cats, prefix) {
+    const picker = document.getElementById(containerId);
+    if (cats.length === 0) {
+        picker.innerHTML = `<div class="empty-state"><i class="fas fa-layer-group"></i><p>No ${prefix === 'inv'? 'investment' : 'expense'} categories yet</p></div>`;
+        return;
+    }
+    picker.innerHTML = cats.map(cat => {
+        const icon = cat.icon || 'fas fa-tag';
+        const color = cat.color || '#6366F1';
+        const bg = `${color}20`;
+        const total = prefix === 'inv'? cat.total_invested : cat.total_spent;
+        const count = prefix === 'inv'? cat.investment_count : cat.expense_count;
+        return `<div class="cat-option" data-id="${cat.id}" data-prefix="${prefix}" onclick="selectCat(${cat.id}, '${prefix}')">
+            <div class="cat-option-icon" style="background:${bg};color:${color}">
+                <i class="${icon}"></i>
+            </div>
+            <div style="flex: 1; min-width: 0; overflow: hidden;">
+                <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat.name}</div>
+                <div style="font-size:10px;color:var(--text-muted)">${formatCurrency(total)} · ${count} entries</div>
+            </div>
+            <i class="fas fa-check-circle cat-option-check"></i>
+        </div>`;
+    }).join('');
+}
+
+function selectCat(id, prefix) {
+    if (prefix === 'inv') {
+        selectedInvCat = id;
+        document.getElementById('inv_category').value = id;
+    } else {
+        selectedExpCat = id;
+        document.getElementById('exp_category').value = id;
+    }
+    document.querySelectorAll(`.cat-option[data-prefix="${prefix}"]`).forEach(el => {
+        el.classList.toggle('selected', parseInt(el.dataset.id) === id);
+    });
+}
+
+async function submitIncome(e) {
+    e.preventDefault();
+    const data = {
+        amount: document.getElementById('income_amount').value,
+        wallet_id: document.getElementById('income_wallet').value,
+        income_date: document.getElementById('income_date').value,
+        description: document.getElementById('income_desc').value
+    };
+
+    const res = await fetch('/api/income', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+
+    if (result.success) {
+        showToast('Income added! New balance: ' + formatCurrencyFull(result.new_balance), 'success');
+        document.getElementById('incomeForm').reset();
+        document.getElementById('income_date').value = new Date().toISOString().split('T')[0];
+        loadData();
+    } else {
+        showToast(result.message || 'Failed', 'error');
+    }
+}
+
+function openIncomeModal(id) {
+    const income = incomes.find(i => i.id === id);
+    if (!income) return;
+
+    document.getElementById('edit_income_id').value = income.id;
+    document.getElementById('edit_income_amount').value = income.amount;
+    document.getElementById('edit_income_date').value = income.income_date;
+    document.getElementById('edit_income_desc').value = income.description || '';
+    document.getElementById('edit_income_wallet').value = income.wallet_id;
+
+    document.getElementById('incomeModal').classList.add('open');
+}
+
+function closeIncomeModal() {
+    document.getElementById('incomeModal').classList.remove('open');
+}
+
+function editIncome(id) {
+    openIncomeModal(id);
+}
+
+async function deleteIncome(id) {
+    if (!confirm('Delete this income? Wallet will be debited.')) return;
+    try {
+        const res = await fetch(`/api/incomes/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Income deleted');
+            loadData();
+        } else {
+            showToast(data.message || 'Failed to delete', 'error');
+        }
+    } catch (e) {
+        showToast('Error deleting income', 'error');
+    }
+}
+
+document.getElementById('incomeEditForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit_income_id').value;
+
+    const payload = {
+        amount: document.getElementById('edit_income_amount').value,
+        wallet_id: document.getElementById('edit_income_wallet').value,
+        income_date: document.getElementById('edit_income_date').value,
+        description: document.getElementById('edit_income_desc').value
+    };
+
+    try {
+        const res = await fetch(`/api/incomes/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Income updated');
+            closeIncomeModal();
+            loadData();
+        } else {
+            showToast(data.message || 'Failed to update', 'error');
+        }
+    } catch (e) {
+        showToast('Error updating income', 'error');
+    }
+});
+
+async function submitInvestment(e) {
+    e.preventDefault();
+    if (!selectedInvCat) { showToast('Please select a category', 'error'); return; }
+
+    const data = {
+        amount: document.getElementById('inv_amount').value,
+        wallet_id: document.getElementById('inv_wallet').value,
+        category_id: selectedInvCat,
+        investment_date: document.getElementById('inv_date').value,
+        description: document.getElementById('inv_desc').value,
+        notes: document.getElementById('inv_notes').value
+    };
+
+    const res = await fetch('/api/investments', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+
+    if (result.success) {
+        showToast('Investment added!', 'success');
+        document.getElementById('investmentForm').reset();
+        document.getElementById('inv_date').value = new Date().toISOString().split('T')[0];
+        selectedInvCat = null;
+        document.querySelectorAll('.cat-option[data-prefix="inv"]').forEach(el => el.classList.remove('selected'));
+        loadData();
+    } else {
+        showToast(result.message || 'Failed', 'error');
+    }
+}
+
+async function submitExpense(e) {
+    e.preventDefault();
+    if (!selectedExpCat) { showToast('Please select a category', 'error'); return; }
+
+    const data = {
+        amount: document.getElementById('exp_amount').value,
+        wallet_id: document.getElementById('exp_wallet').value,
+        category_id: selectedExpCat,
+        expense_date: document.getElementById('exp_date').value,
+        description: document.getElementById('exp_desc').value,
+        notes: document.getElementById('exp_notes').value
+    };
+
+    const res = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+
+    if (result.success) {
+        showToast('Expense added!', 'success');
+        document.getElementById('expenseForm').reset();
+        document.getElementById('exp_date').value = new Date().toISOString().split('T')[0];
+        selectedExpCat = null;
+        document.querySelectorAll('.cat-option[data-prefix="exp"]').forEach(el => el.classList.remove('selected'));
+        loadData();
+    } else {
+        showToast(result.message || 'Failed', 'error');
+    }
+}
+
+function formatCurrency(amount) {
+    const num = parseFloat(amount) || 0;
+    if (num >= 100000) return '₹' + (num / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+    if (num >= 1000) return '₹' + (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return '₹' + Math.round(num);
+}
+
+function formatCurrencyFull(amount) {
+    return '₹' + Math.round(parseFloat(amount) || 0).toLocaleString('en-IN');
+}
+
+loadData();
+</script>
+{% endblock %}

@@ -1,0 +1,824 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — InvestPro{% endblock %}
+{% block page_title %}Admin Panel{% endblock %}
+
+{# Hide sidebar/nav for admin page #}
+{% block sidebar %}{% endblock %}
+{% block mobile_nav %}{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* Hide main layout margins when sidebar is gone */
+.main-content { margin-left: 0!important; }
+.mobile-nav { display: none!important; }
+
+/* === TABS === */
+.admin-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+.admin-tab {
+    padding: 10px 18px;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--text-muted);
+    background: transparent;
+    transition: all 0.2s;
+}
+.admin-tab.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+.admin-tab:hover { color: var(--text-primary); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* === ADMIN STATS GRID === */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.admin-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    transition: all 0.2s;
+}
+.admin-card.clickable { cursor: pointer; }
+.admin-card.clickable:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+}
+.admin-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+}
+.admin-card.db::before { background: #FFB800; }
+.admin-card.users::before { background: #9B59F5; }
+.admin-card.online::before { background: #00E5A0; }
+.admin-card.inv::before { background: #4F8EF7; }
+
+.admin-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.admin-card-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+}
+.admin-card.db.admin-card-icon { background: rgba(255,184,0,0.15); color: #FFB800; }
+.admin-card.users.admin-card-icon { background: rgba(155,89,245,0.15); color: #9B59F5; }
+.admin-card.online.admin-card-icon { background: rgba(0,229,160,0.15); color: #00E5A0; }
+.admin-card.inv.admin-card-icon { background: rgba(79,142,247,0.15); color: #4F8EF7; }
+
+.admin-card-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+.admin-card-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 4px 0 2px;
+}
+.admin-card-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* === USAGE CHART === */
+.chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.chart-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+.chart-wrap { position: relative; height: 280px; }
+
+/* === SECTIONS === */
+.admin-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+.admin-section-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.admin-section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+}
+.refresh-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.refresh-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+
+.admin-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
+th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+td {
+    padding: 12px 16px;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(42,42,56,0.5);
+    color: var(--text-secondary);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.015); }
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.badge.admin { background: rgba(255,184,0,0.15); color: var(--accent-gold); }
+.badge.user { background: rgba(79,142,247,0.15); color: var(--accent-blue); }
+.badge.online { background: rgba(0,229,160,0.15); color: var(--accent-green); }
+
+.action-btns { display: flex; gap: 6px; }
+.action-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    transition: all 0.2s;
+}
+.action-btn:hover.admin { background: rgba(255,184,0,0.15); color: var(--accent-gold); border-color: rgba(255,184,0,0.3); }
+.action-btn:hover.edit { background: rgba(79,142,247,0.15); color: var(--accent-blue); border-color: rgba(79,142,247,0.3); }
+.action-btn:hover.delete { background: rgba(255,71,87,0.15); color: var(--danger); border-color: rgba(255,71,87,0.3); }
+.action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* === DB BROWSER === */
+.db-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.table-select,.filter-input {
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 12px;
+}
+.table-select { min-width: 180px; }
+.filter-input { min-width: 140px; }
+.db-cell-input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 4px;
+    border-radius: 4px;
+}
+.db-cell-input:focus {
+    background: var(--bg-secondary);
+    border-color: var(--accent-blue);
+    outline: none;
+}
+
+@media (max-width: 768px) {
+.admin-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+.admin-card { padding: 14px; }
+.admin-card-value { font-size: 20px; }
+.admin-section-header { padding: 14px 16px; }
+th, td { padding: 10px 12px; font-size: 11px; }
+.admin-tabs { overflow-x: auto; }
+.db-controls { width: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1400px;margin:0 auto;">
+<!-- TABS -->
+<div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchTab('overview')">Overview</button>
+    <button class="admin-tab" onclick="switchTab('users')">Users</button>
+    <button class="admin-tab" onclick="switchTab('subscriptions')">Subscriptions</button>
+    <button class="admin-tab" onclick="switchTab('investments')">Investments</button>
+    <button class="admin-tab" onclick="switchTab('database')">Database</button>
+</div>
+
+<!-- TAB 1: OVERVIEW -->
+<div class="tab-content active" id="tab-overview">
+    <div class="admin-stats" id="adminStats">
+        <div class="admin-card db">
+            <div class="admin-card-header">
+                <div class="admin-card-icon"><i class="fas fa-database"></i></div>
+            </div>
+            <div class="admin-card-label">Database Used</div>
+            <div class="admin-card-value" id="dbVal">-- MB</div>
+            <div class="admin-card-sub" id="dbSub">of -- MB limit</div>
+        </div>
+
+        <div class="admin-card users clickable" onclick="switchTab('users')">
+            <div class="admin-card-header">
+                <div class="admin-card-icon"><i class="fas fa-users"></i></div>
+                <i class="fas fa-arrow-right" style="color:var(--text-muted);font-size:12px;"></i>
+            </div>
+            <div class="admin-card-label">Total Users</div>
+            <div class="admin-card-value" id="userVal">--</div>
+            <div class="admin-card-sub">Click to manage</div>
+        </div>
+
+        <div class="admin-card online">
+            <div class="admin-card-header">
+                <div class="admin-card-icon"><i class="fas fa-circle" style="font-size:8px;"></i></div>
+            </div>
+            <div class="admin-card-label">Online Now</div>
+            <div class="admin-card-value" id="onlineVal">--</div>
+            <div class="admin-card-sub">active last 5 min</div>
+        </div>
+
+        <div class="admin-card inv">
+            <div class="admin-card-header">
+                <div class="admin-card-icon"><i class="fas fa-chart-line"></i></div>
+            </div>
+            <div class="admin-card-label">Total Investments</div>
+            <div class="admin-card-value" id="invVal">--</div>
+            <div class="admin-card-sub">all users combined</div>
+        </div>
+    </div>
+
+    <!-- Usage Chart -->
+    <div class="chart-card">
+        <div class="chart-title">Daily App Usage - Last 7 Days</div>
+        <div class="chart-wrap">
+            <canvas id="usageChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 2: USERS -->
+<div class="tab-content" id="tab-users">
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <div class="admin-section-title">User Management</div>
+            <button class="refresh-btn" onclick="loadUsers()"><i class="fas fa-sync"></i></button>
+        </div>
+        <div class="admin-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Investments</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable">
+                    <tr><td colspan="7" style="text-align:center;padding:40px"><div class="spinner" style="margin:auto"></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 3: SUBSCRIPTIONS -->
+<div class="tab-content" id="tab-subscriptions">
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <div class="admin-section-title">Manage User Subscriptions</div>
+            <button class="refresh-btn" onclick="location.reload()"><i class="fas fa-sync"></i></button>
+        </div>
+        <div class="admin-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Status</th>
+                        <th>Plan</th>
+                        <th>Expires</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    {% if not user.is_admin %}
+                    <tr>
+                        <td style="color:var(--text-muted)">{{ user.id }}</td>
+                        <td style="color:var(--text-primary);font-weight:500">{{ user.username }}</td>
+                        <td>
+                            {% if user.is_subscription_valid() %}
+                                <span class="badge online"><i class="fas fa-check-circle"></i> Active</span>
+                            {% else %}
+                                <span class="badge" style="background:rgba(255,71,87,0.15);color:var(--danger);"><i class="fas fa-times-circle"></i> Expired</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-secondary)">{{ user.plan_type or 'trial' }}</td>
+                        <td style="color:var(--text-muted)">
+                            {% if user.subscription_status == 'trial' %}
+                                Trial: {{ (user.trial_start_date + timedelta(days=30)).strftime('%d %b %Y') }}
+                            {% elif user.subscription_end_date %}
+                                {{ user.subscription_end_date.strftime('%d %b %Y') }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin.update_subscription') }}" style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <select name="plan_type" class="filter-input" style="padding:6px;font-size:11px;">
+                                    <option value="1month">1M - ₹19</option>
+                                    <option value="3month">3M - ₹50</option>
+                                    <option value="6month">6M - ₹100</option>
+                                    <option value="trial">Trial 30d</option>
+                                </select>
+                                <button name="action" value="activate" class="action-btn edit" title="Activate" style="width:auto;padding:0 8px;">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button name="action" value="extend" class="action-btn" style="width:auto;padding:0 8px;background:rgba(0,229,160,0.15);color:var(--accent-green);border-color:rgba(0,229,160,0.3);" title="Extend">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button name="action" value="expire" class="action-btn delete" title="Expire" style="width:auto;padding:0 8px;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 4: INVESTMENTS -->
+<div class="tab-content" id="tab-investments">
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <div class="admin-section-title">All Investments</div>
+            <button class="refresh-btn" onclick="loadAllInvestments()"><i class="fas fa-sync"></i></button>
+        </div>
+        <div class="admin-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Category</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="investmentsTable">
+                    <tr><td colspan="7" style="text-align:center;padding:40px"><div class="spinner" style="margin:auto"></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 5: DATABASE -->
+<div class="tab-content" id="tab-database">
+    <div class="admin-section">
+        <div class="admin-section-header">
+            <div class="admin-section-title">Database Browser</div>
+            <div class="db-controls">
+                <select class="table-select" id="tableSelect" onchange="loadTableData(this.value)">
+                    <option value="">Select table...</option>
+                </select>
+                <input type="text" class="filter-input" id="filterCol" placeholder="Column name">
+                <input type="text" class="filter-input" id="filterVal" placeholder="Filter value">
+                <button class="btn btn-ghost btn-sm" onclick="applyFilter()"><i class="fas fa-filter"></i> Filter</button>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table id="dbTable">
+                <thead id="dbTableHead"></thead>
+                <tbody id="dbTableBody">
+                    <tr><td colspan="100" style="text-align:center;padding:40px;color:var(--text-muted)">Select a table to view data</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-overlay" id="editUserModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Edit User</div>
+            <button class="modal-close" onclick="closeModal('editUserModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="editUserForm">
+            <input type="hidden" id="editUserId">
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" id="editUsername" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-control" id="editPassword" placeholder="Leave blank to keep current">
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('editUserModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentUserId = {{ session.user_id }};
+let currentTable = null;
+const PROTECTED_COLS = ['id', 'password_hash', 'created_at'];
+let usageChart = null;
+
+function switchTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.admin-tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+
+    if (tab === 'users') loadUsers();
+    if (tab === 'investments') loadAllInvestments();
+    if (tab === 'database') loadTableList();
+    if (tab === 'overview') { loadStats(); loadUsageChart(); }
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        document.getElementById('dbVal').textContent = data.db_size_mb + ' MB';
+        document.getElementById('dbSub').textContent = `${data.db_percent}% of ${data.db_limit_mb} MB limit`;
+        document.getElementById('userVal').textContent = data.users;
+        document.getElementById('onlineVal').textContent = data.online_users;
+        document.getElementById('invVal').textContent = data.investments;
+    } catch (e) { console.error(e); }
+}
+
+async function loadUsageChart() {
+    try {
+        const res = await fetch('/api/admin/usage-report');
+        const data = await res.json();
+
+        const ctx = document.getElementById('usageChart').getContext('2d');
+        if (usageChart) usageChart.destroy();
+
+        usageChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date_label),
+                datasets: [{
+                    label: 'Active Users',
+                    data: data.map(d => d.active_users),
+                    borderColor: '#00E5A0',
+                    backgroundColor: 'rgba(0,229,160,0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Requests',
+                    data: data.map(d => d.requests),
+                    borderColor: '#4F8EF7',
+                    backgroundColor: 'rgba(79,142,247,0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#8A9A' } } },
+                scales: {
+                    x: { ticks: { color: '#8A8A9A' }, grid: { color: '#2A2A38' } },
+                    y: { ticks: { color: '#8A8A9A' }, grid: { color: '#2A2A38' }, position: 'left' },
+                    y1: { ticks: { color: '#8A8A9A' }, grid: { drawOnChartArea: false }, position: 'right' }
+                }
+            }
+        });
+    } catch (e) { console.error(e); }
+}
+
+async function loadUsers() {
+    try {
+        const res = await fetch('/api/admin/users');
+        const users = await res.json();
+        const tbody = document.getElementById('usersTable');
+
+        tbody.innerHTML = users.map(u => `
+            <tr>
+                <td style="color:var(--text-muted)">${u.id}</td>
+                <td style="color:var(--text-primary);font-weight:500">${u.username}</td>
+                <td>
+                    <span class="badge ${u.is_admin? 'admin' : 'user'}">
+                        <i class="fas fa-${u.is_admin? 'crown' : 'user'}"></i>
+                        ${u.is_admin? 'Admin' : 'User'}
+                    </span>
+                </td>
+                <td>
+                    ${u.is_online? '<span class="badge online"><i class="fas fa-circle" style="font-size:6px;"></i> Online</span>' : '<span style="color:var(--text-muted);font-size:10px;">Offline</span>'}
+                </td>
+                <td style="color:var(--text-muted)">${u.created_at? new Date(u.created_at).toLocaleDateString() : '-'}</td>
+                <td style="color:var(--text-secondary)">${u.investment_count}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn edit" onclick="openEditUser(${u.id}, '${u.username}')" title="Edit" ${u.id === currentUserId? 'disabled' : ''}>
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn admin" onclick="toggleAdmin(${u.id})" title="Toggle Admin" ${u.id === currentUserId? 'disabled' : ''}>
+                            <i class="fas fa-user-shield"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteUser(${u.id}, '${u.username}')" title="Delete" ${u.id === currentUserId? 'disabled' : ''}>
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) { showToast('Failed to load users', 'error'); }
+}
+
+function openEditUser(id, username) {
+    document.getElementById('editUserId').value = id;
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editPassword').value = '';
+    document.getElementById('editUserModal').classList.add('open');
+}
+
+document.getElementById('editUserForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editUserId').value;
+    const username = document.getElementById('editUsername').value;
+    const password = document.getElementById('editPassword').value;
+
+    const data = {username};
+    if (password) data.password = password;
+
+    try {
+        const res = await fetch(`/api/admin/users/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast('User updated', 'success');
+            closeModal('editUserModal');
+            loadUsers();
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (e) { showToast('Error', 'error'); }
+};
+
+async function toggleAdmin(userId) {
+    if (!confirm('Toggle admin status for this user?')) return;
+    try {
+        const res = await fetch(`/api/admin/toggle_admin/${userId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Admin status updated', 'success');
+            loadUsers();
+        } else { showToast(data.message, 'error'); }
+    } catch (e) { showToast('Error', 'error'); }
+}
+
+async function deleteUser(userId, username) {
+    if (!confirm(`Delete user "${username}"? This will remove all their data.`)) return;
+    try {
+        const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showToast('User deleted', 'success');
+            loadUsers();
+            loadStats();
+        } else { showToast(data.message, 'error'); }
+    } catch (e) { showToast('Error', 'error'); }
+}
+
+async function loadAllInvestments() {
+    try {
+        const res = await fetch('/api/admin/investments');
+        const investments = await res.json();
+        const tbody = document.getElementById('investmentsTable');
+
+        tbody.innerHTML = investments.map(inv => `
+            <tr>
+                <td style="color:var(--text-muted)">${inv.id}</td>
+                <td style="color:var(--text-primary)">${inv.username}</td>
+                <td style="color:var(--text-primary);font-weight:500">${inv.name}</td>
+                <td style="color:var(--text-secondary)">${inv.type}</td>
+                <td style="color:var(--accent-gold)">₹${inv.amount.toLocaleString()}</td>
+                <td style="color:var(--text-muted)">${new Date(inv.date).toLocaleDateString()}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn delete" onclick="deleteInvestmentAdmin(${inv.id})" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) { showToast('Failed to load investments', 'error'); }
+}
+
+async function deleteInvestmentAdmin(invId) {
+    if (!confirm('Delete this investment?')) return;
+    try {
+        const res = await fetch(`/api/admin/investments/${invId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Investment deleted', 'success');
+            loadAllInvestments();
+            loadStats();
+        } else { showToast(data.message, 'error'); }
+    } catch (e) { showToast('Error', 'error'); }
+}
+
+async function loadTableList() {
+    try {
+        const res = await fetch('/api/admin/tables');
+        const data = await res.json();
+        const select = document.getElementById('tableSelect');
+        select.innerHTML = '<option value="">Select table...</option>' +
+            data.tables.map(t => `<option value="${t}">${t}</option>`).join('');
+    } catch (e) { showToast('Failed to load tables', 'error'); }
+}
+
+function applyFilter() {
+    const table = document.getElementById('tableSelect').value;
+    if (table) loadTableData(table);
+}
+
+async function loadTableData(tableName) {
+    if (!tableName) return;
+    currentTable = tableName;
+    const col = document.getElementById('filterCol').value;
+    const val = document.getElementById('filterVal').value;
+    let url = `/api/admin/table/${tableName}`;
+    if (col && val) url += `?filter_col=${col}&filter_val=${encodeURIComponent(val)}`;
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const thead = document.getElementById('dbTableHead');
+        const tbody = document.getElementById('dbTableBody');
+
+        thead.innerHTML = `<tr>${data.columns.map(c => `<th>${c}</th>`).join('')}<th>Actions</th></tr>`;
+
+        tbody.innerHTML = data.rows.map(row => `
+            <tr data-id="${row.id}">
+                ${data.columns.map(col => {
+                    const isReadonly = PROTECTED_COLS.includes(col);
+                    let val = row[col]?? '';
+                    if ((col.includes('date') || col.includes('_at')) && val) {
+                        try {
+                            val = new Date(val).toLocaleString('en-IN', {
+                                year: 'numeric', month: 'short', day: '2-digit',
+                                hour: '2-digit', minute: '2-digit'
+                            });
+                        } catch {}
+                    }
+                    return `
+                        <td>
+                            <input class="db-cell-input" data-col="${col}" value="${val}" ${isReadonly? 'readonly style="background:var(--bg-primary);cursor:not-allowed;"' : ''}>
+                        </td>
+                    `;
+                }).join('')}
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn edit" onclick="saveRow(${row.id})" title="Save">
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteRow(${row.id})" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) { showToast('Failed to load table data', 'error'); }
+}
+
+async function saveRow(rowId) {
+    const row = document.querySelector(`tr[data-id="${rowId}"]`);
+    const inputs = row.querySelectorAll('.db-cell-input:not([readonly])');
+    const data = {};
+    inputs.forEach(inp => data[inp.dataset.col] = inp.value);
+
+    try {
+        const res = await fetch(`/api/admin/table/${currentTable}/${rowId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast('Row updated', 'success');
+        } else {
+            showToast(result.error || 'Update failed', 'error');
+        }
+    } catch (e) { showToast('Error', 'error'); }
+}
+
+async function deleteRow(rowId) {
+    if (!confirm('Delete this row?')) return;
+    try {
+        const res = await fetch(`/api/admin/table/${currentTable}/${rowId}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (result.success) {
+            showToast('Row deleted', 'success');
+            loadTableData(currentTable);
+        } else {
+            showToast(result.error || 'Delete failed', 'error');
+        }
+    } catch (e) { showToast('Error', 'error'); }
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+}
+
+// Initial load
+if (window.location.pathname === '/admin') {
+    loadStats();
+    loadUsers();
+    loadUsageChart();
+    // Auto-refresh stats every 30s for online users
+    setInterval(loadStats, 30000);
+}
+</script>
+{% endblock %}

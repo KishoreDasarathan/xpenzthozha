@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Help & Support — XpenzThozha{% endblock %}
+
+{% block page_title %}Help & Support{% endblock %}
+
+{% block head %}
+<style>
+    /* Page-specific styles */
+    .help-grid {
+        display: grid;
+        gap: 20px;
+        max-width: 900px;
+    }
+    .card-content {
+        color: var(--text-sub);
+        line-height: 1.7;
+        font-size: 14px;
+    }
+    .card-content p {
+        margin-bottom: 12px;
+    }
+    .card-content strong {
+        color: var(--text-primary);
+    }
+
+    /* ── FAQ Accordion ── */
+    .faq-item {
+        border-bottom: 1px solid var(--border);
+        padding: 18px 0;
+    }
+    .faq-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .faq-item:first-child {
+        padding-top: 0;
+    }
+    .faq-question {
+        display: flex; align-items: center; justify-content: space-between;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 15px;
+        transition: color 0.2s;
+        user-select: none;
+    }
+    .faq-question:hover {
+        color: var(--accent-blue);
+    }
+    .faq-question i {
+        transition: transform 0.3s;
+        color: var(--text-muted);
+    }
+    .faq-item.active .faq-question i {
+        transform: rotate(180deg);
+    }
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding-top 0.3s;
+        color: var(--text-sub);
+        font-size: 14px;
+        line-height: 1.7;
+    }
+    .faq-item.active .faq-answer {
+        max-height: 300px;
+        padding-top: 14px;
+    }
+
+    /* ── Contact Box ── */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+    }
+    .contact-box {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        display: flex; align-items: center; gap: 14px;
+        transition: all 0.25s;
+        text-decoration: none;
+    }
+    .contact-box:hover {
+        border-color: var(--accent-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79,142,247,0.15);
+    }
+    .contact-box i {
+        font-size: 20px;
+        color: var(--accent-blue);
+    }
+    .contact-info {
+        flex: 1;
+    }
+    .contact-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+    }
+    .contact-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        word-break: break-all;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-grid">
+    <p style="color: var(--text-secondary); font-size: 15px; margin-bottom: 8px;">Find answers to common questions or get in touch with us</p>
+
+    <!-- FAQs -->
+    <div class="card fade-in">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-circle-question" style="color: var(--accent-gold); margin-right: 8px;"></i>
+                Frequently Asked Questions
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="faq-item">
+                <div class="faq-question">
+                    Forgot your password?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Email us at <strong>xpenzthozha@gmail.com</strong> with proof of account ownership. We can manually delete your old account so you can re-register with the same username.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    How do I add expense categories?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Go to Dashboard → Add Category. You can create custom categories like Food, Travel, Bills, etc. Default investment categories (Gold, SIP, Silver, PPF) are created automatically on signup.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Is my financial data safe?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes. All passwords are hashed using Werkzeug security. Your expense and investment data is isolated per user — no one else can access it. We don’t sell or share data.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Can I export my data?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Currently export is not available, but we’re building CSV/Excel export for both expenses and investments. Expected in the next update.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Why can’t I see my old account?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Each username/password combo creates a separate account. Make sure you’re using the exact username you registered with. Usernames are case-sensitive.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    Does XpenzThozha work on mobile?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes! The site is fully responsive. Add it to your home screen for an app-like experience. Native mobile apps are on our roadmap.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="card fade-in delay-1">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-headset" style="color: var(--accent-green); margin-right: 8px;"></i>
+                Contact Support
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="color: var(--text-secondary); margin-bottom: 0;">Need help with your account, data recovery, or have feedback? Reach out:</p>
+            <div class="contact-grid">
+                <a href="mailto:xpenzthozha@gmail.com" class="contact-box">
+                    <i class="fas fa-envelope"></i>
+                    <div class="contact-info">
+                        <div class="contact-label">Email</div>
+                        <div class="contact-value">xpenzthozha@gmail.com</div>
+                    </div>
+                </a>
+            </div>
+            <p style="margin-top: 16px; font-size: 13px; color: var(--text-muted);">We typically respond within 24 hours. Please include your username when contacting support.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // FAQ Accordion
+    document.querySelectorAll('.faq-question').forEach(q => {
+        q.addEventListener('click', () => {
+            const item = q.parentElement;
+            item.classList.toggle('active');
+        });
+    });
+</script>
+{% endblock %}

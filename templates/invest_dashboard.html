@@ -1,0 +1,603 @@
+{% extends "base.html" %}
+{% block title %}Investment Dashboard — InvestPro{% endblock %}
+{% block page_title %}Investment Dashboard{% endblock %}
+
+{% block head %}
+<style>
+/* === MAIN GRID === */
+.dash-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+    align-items: start;
+}
+
+.dash-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+/* === CARD BASE === */
+.dash-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px 22px;
+    position: relative;
+}
+.dash-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 18px 18px 0 0;
+    background: var(--accent-green);
+}
+
+/* === TOP BAR === */
+.invest-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.back-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+/* === HERO === */
+.hero-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+.hero-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-bottom: 4px; }
+.hero-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1;
+    color: var(--accent-green);
+}
+.hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.hero-stat {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+}
+.hero-stat-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.hero-stat-val { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-top: 3px; }
+
+/* === CHART CARD === */
+.chart-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.chart-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.chart-filters { display: flex; gap: 4px; }
+.filter-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+    padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 600; cursor: pointer;
+}
+.filter-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+.chart-body { height: 170px; position: relative; }
+
+.donut-wrap {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 12px;
+    align-items: center;
+    height: 100%;
+}
+.donut-legend { max-height: 100px; overflow-y: auto; padding-right: 4px; }
+.legend-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 10px; }
+.legend-dot-wrap { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.legend-pct { font-family: 'Syne', sans-serif; font-weight: 600; }
+
+/* === BREAKDOWN === */
+.breakdown-box { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.breakdown-header { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.breakdown-list { max-height: 150px; overflow-y: auto; }
+.breakdown-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(42,42,56,0.4); }
+.breakdown-item:last-child { border-bottom: none; }
+.breakdown-left { display: flex; align-items: center; gap: 7px; font-size: 11px; }
+.breakdown-dot { width: 6px; height: 6px; border-radius: 50%; }
+.breakdown-val { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; }
+
+/* === RECENT LIST - FIXED TO SHOW 2 ITEMS === */
+.recent-list { max-height: 90px; overflow-y: auto; }
+.recent-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(42,42,56,0.4); }
+.recent-item:last-child { border-bottom: none; }
+.recent-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.recent-details { flex: 1; min-width: 0; }
+.recent-name { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-meta { font-size: 9px; color: var(--text-muted); margin-top: 1px; }
+.recent-amt { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--accent-green); }
+
+/* === MODAL === */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    width: 480px;
+    max-width: 95vw;
+    animation: modalIn 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+@keyframes modalIn {
+    from { transform: translateY(-20px) scale(0.96); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+.modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.modal-close {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--bg-hover);
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+.modal-close:hover { color: var(--text-primary); background: var(--border); }
+
+.modal-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.modal-table th { text-align: left; padding: 8px; background: var(--bg-secondary); color: var(--text-muted); font-size: 9px; text-transform: uppercase; }
+.modal-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+.modal-table tr:hover { background: var(--bg-hover); }
+
+/* === RESPONSIVE === */
+@media (max-width: 1400px) {
+  .hero-value { font-size: 28px; }
+  .chart-body { height: 160px; }
+}
+@media (max-width: 1200px) {
+  .dash-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .hero-stats { grid-template-columns: 1fr; }
+  .hero-value { font-size: 24px; }
+  .donut-wrap { grid-template-columns: 1fr; }
+  .invest-topbar { flex-direction: column; gap: 12px; align-items: stretch; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="dash-grid">
+    <!-- ================= LEFT COLUMN ================= -->
+    <div class="dash-col">
+        <!-- Total Investment Hero -->
+        <div class="dash-card fade-in-up">
+            <div class="hero-row">
+                <div>
+                    <div class="hero-label">Total Investment Value</div>
+                    <div class="hero-value" id="invTotal">₹0</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="openMonthlyModal()">
+                    <i class="fas fa-calendar"></i> All Months
+                </button>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-label">This Month</div>
+                    <div class="hero-stat-val" id="invMonthly">₹0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Categories</div>
+                    <div class="hero-stat-val" id="invCatCount">0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Entries</div>
+                    <div class="hero-stat-val" id="invEntryCount">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- This Month Breakdown -->
+        <div class="dash-card fade-in-up delay-1">
+            <div class="breakdown-box">
+                <div class="breakdown-header">
+                    <span>This Month Breakdown</span>
+                    <span id="invMonthName"></span>
+                </div>
+                <div class="breakdown-list" id="invMonthBreakdown">
+                    <div class="loading-state"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investment Trend -->
+        <div class="dash-card fade-in-up delay-2">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Investment Trend</div>
+                    <div class="chart-filters">
+                        <button class="filter-btn" onclick="updateTrendPeriod(3, this)">3M</button>
+                        <button class="filter-btn active" onclick="updateTrendPeriod(6, this)">6M</button>
+                        <button class="filter-btn" onclick="updateTrendPeriod(12, this)">1Y</button>
+                        <button class="filter-btn" onclick="updateTrendPeriod(24, this)">2Y</button>
+                    </div>
+                </div>
+                <div class="chart-body"><canvas id="trendChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= RIGHT COLUMN ================= -->
+    <div class="dash-col">
+        <!-- Investment Allocation -->
+        <div class="dash-card fade-in-up">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Investment Allocation</div>
+                    <div class="chart-filters">
+                        <button class="filter-btn active" onclick="toggleAllocation('overall', this)">Overall</button>
+                        <button class="filter-btn" onclick="toggleAllocation('month', this)">This Month</button>
+                    </div>
+                </div>
+                <div class="chart-body" style="height:160px;">
+                    <div class="donut-wrap">
+                        <canvas id="allocChart"></canvas>
+                        <div class="donut-legend" id="allocLegend"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Categories -->
+        <div class="dash-card fade-in-up delay-1">
+            <div class="chart-header">
+                <div class="chart-title">Top Categories</div>
+            </div>
+            <div class="breakdown-list" id="topCategories">
+                <div class="loading-state"><div class="spinner"></div></div>
+            </div>
+        </div>
+
+        <!-- Recent Investments -->
+        <div class="dash-card fade-in-up delay-2">
+            <div class="chart-header">
+                <div class="chart-title">Recent Investments</div>
+                <a href="/add-transaction" class="btn btn-ghost btn-sm"><i class="fas fa-plus"></i></a>
+            </div>
+            <div class="recent-list" id="recentInvestments">
+                <div class="loading-state"><div class="spinner"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Breakdown Modal -->
+<div class="modal-overlay" id="monthlyModal">
+    <div class="modal" style="max-width:900px;">
+        <div class="modal-header">
+            <div class="modal-title">Monthly Investment Breakdown</div>
+            <button class="modal-close" onclick="closeMonthlyModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="table-wrap" style="max-height:60vh;overflow-y:auto;">
+            <table class="modal-table" id="monthlyTable">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Total Invested</th>
+                        <th>Entries</th>
+                        <th>Top Category</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="4" class="loading-state"><div class="spinner"></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let trendChart, allocChart;
+let dashData = {};
+let currentTrendPeriod = 6;
+let allocMode = 'overall';
+
+async function loadDashboard() {
+    try {
+        const res = await fetch('/api/dashboard-stats');
+        if (!res.ok) throw new Error('API failed');
+        dashData = await res.json();
+
+        // Hero
+        document.getElementById('invTotal').textContent = formatCurrencyFull(dashData.total);
+        document.getElementById('invMonthly').textContent = formatCurrencyFull(dashData.monthly);
+        document.getElementById('invCatCount').textContent = dashData.categories.filter(c => c.total > 0).length;
+        document.getElementById('invEntryCount').textContent = dashData.categories.reduce((s, c) => s + c.count, 0);
+        document.getElementById('invMonthName').textContent = new Date().toLocaleString('default', {month:'long'});
+
+        // Render
+        renderInvMonthBreakdown();
+        renderTrendChart();
+        renderAllocation();
+        renderRecentInvestments();
+        renderTopCategories();
+
+    } catch (e) {
+        console.error(e);
+        showToast('Failed to load dashboard: ' + e.message, 'error');
+    }
+}
+
+function renderInvMonthBreakdown() {
+    const el = document.getElementById('invMonthBreakdown');
+    const today = new Date();
+    const monthStr = today.toISOString().slice(0, 7);
+
+    // Filter investments for current month
+    const monthInvestments = dashData.recent.filter(inv => inv.investment_date.startsWith(monthStr));
+    const catTotals = {};
+
+    monthInvestments.forEach(inv => {
+        const catName = inv.category_name || 'Unknown';
+        if (!catTotals[catName]) {
+            catTotals[catName] = { total: 0, color: inv.category_color || '#6366F1' };
+        }
+        catTotals[catName].total += inv.amount;
+    });
+
+    const cats = Object.entries(catTotals).map(([name, data]) => ({name,...data}))
+       .sort((a,b) => b.total - a.total).slice(0, 5);
+
+    if (!cats.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:10px;padding:10px;">No investments this month</div>';
+        return;
+    }
+    el.innerHTML = cats.map(c => `
+        <div class="breakdown-item">
+            <div class="breakdown-left">
+                <div class="breakdown-dot" style="background:${c.color}"></div>
+                ${c.name}
+            </div>
+            <div class="breakdown-val" style="color:${c.color}">${formatCurrency(c.total)}</div>
+        </div>
+    `).join('');
+}
+
+function renderTrendChart() {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    if (trendChart) trendChart.destroy();
+
+    let trend = dashData.monthly_trend.slice(-currentTrendPeriod);
+    const labels = trend.map(t => {
+        const [y, m] = t.month.split('-');
+        return new Date(y, m-1).toLocaleString('default', {month:'short'});
+    });
+    const values = trend.map(t => parseFloat(t.total));
+
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                borderColor: 'rgba(0,229,160,0.9)',
+                backgroundColor: 'rgba(0,229,160,0.1)',
+                borderWidth: 2,
+                pointBackgroundColor: '#00E5A0',
+                pointRadius: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: {
+                backgroundColor: '#16161E',
+                callbacks: { label: ctx => ' ₹' + ctx.raw.toLocaleString('en-IN') }
+            }},
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#555570', font: { size: 9 } } },
+                y: { grid: { color: 'rgba(42,42,56,0.5)' }, ticks: { color: '#555570', font: { size: 9 },
+                    callback: v => v >= 100000? '₹' + (v/100000).toFixed(1) + 'L' : v >= 1000? '₹' + (v/1000).toFixed(0) + 'K' : '₹' + v
+                } }
+            }
+        }
+    });
+}
+
+function renderAllocation() {
+    const ctx = document.getElementById('allocChart').getContext('2d');
+    if (allocChart) allocChart.destroy();
+
+    let cats;
+    if (allocMode === 'overall') {
+        cats = dashData.categories.filter(c => parseFloat(c.total) > 0);
+    } else {
+        // This Month mode - filter by current month
+        const today = new Date();
+        const monthStr = today.toISOString().slice(0, 7);
+        const monthInvestments = dashData.recent.filter(inv => inv.investment_date.startsWith(monthStr));
+        const catTotals = {};
+
+        monthInvestments.forEach(inv => {
+            const catName = inv.category_name || 'Unknown';
+            if (!catTotals[catName]) {
+                catTotals[catName] = {
+                    total: 0,
+                    color: inv.category_color || '#6366F1',
+                    name: catName
+                };
+            }
+            catTotals[catName].total += inv.amount;
+        });
+
+        cats = Object.values(catTotals).filter(c => c.total > 0);
+    }
+
+    if (!cats.length) {
+        document.getElementById('allocLegend').innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:10px;">No data</div>';
+        return;
+    }
+
+    const total = cats.reduce((s, c) => s + parseFloat(c.total), 0);
+    allocChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: cats.map(c => c.name),
+            datasets: [{ data: cats.map(c => parseFloat(c.total)), backgroundColor: cats.map(c => c.color), borderWidth: 0 }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            layout: { padding: 2 },
+            plugins: { legend: { display: false }, tooltip: {
+                backgroundColor: '#16161E',
+                callbacks: { label: ctx => ' ₹' + ctx.raw.toLocaleString('en-IN') }
+            }}
+        }
+    });
+
+    document.getElementById('allocLegend').innerHTML = cats.map(c => {
+        const pct = total > 0? ((parseFloat(c.total)/total)*100).toFixed(1) : 0;
+        return `<div class="legend-item">
+            <div class="legend-dot-wrap"><div class="legend-dot" style="background:${c.color}"></div>${c.name}</div>
+            <div class="legend-pct" style="color:${c.color}">${pct}%</div>
+        </div>`;
+    }).join('');
+}
+
+function renderRecentInvestments() {
+    const el = document.getElementById('recentInvestments');
+    if (!dashData.recent.length) {
+        el.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i><p>No investments yet</p></div>`;
+        return;
+    }
+    // Show all but CSS limits height to 2 items with scroll
+    el.innerHTML = dashData.recent.map(inv => {
+        const bg = (inv.category_color || '#6366F1') + '20';
+        return `<div class="recent-item">
+            <div class="recent-icon" style="background:${bg};color:${inv.category_color || '#6366F1'}">
+                <i class="${inv.category_icon || 'fas fa-wallet'}"></i>
+            </div>
+            <div class="recent-details">
+                <div class="recent-name">${inv.description || inv.category_name}</div>
+                <div class="recent-meta">${inv.category_name} · ${formatDate(inv.investment_date)} · ${inv.wallet_name || 'No wallet'}</div>
+            </div>
+            <div class="recent-amt">+${formatCurrency(inv.amount)}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderTopCategories() {
+    const el = document.getElementById('topCategories');
+    const cats = dashData.categories.filter(c => c.total > 0).sort((a,b) => b.total - a.total).slice(0, 5);
+    if (!cats.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:11px;padding:12px;">No investments yet</div>';
+        return;
+    }
+    el.innerHTML = cats.map(c => `
+        <div class="breakdown-item">
+            <div class="breakdown-left">
+                <div class="breakdown-dot" style="background:${c.color}"></div>
+                ${c.name}
+            </div>
+            <div class="breakdown-val" style="color:${c.color}">${formatCurrency(c.total)}</div>
+        </div>
+    `).join('');
+}
+
+function updateTrendPeriod(months, btn) {
+    currentTrendPeriod = months;
+    document.querySelectorAll('.chart-filters.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTrendChart();
+}
+
+function toggleAllocation(mode, btn) {
+    allocMode = mode;
+    document.querySelectorAll('.chart-filters.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAllocation();
+}
+
+async function openMonthlyModal() {
+    document.getElementById('monthlyModal').classList.add('open');
+    try {
+        const res = await fetch('/api/monthly-breakdown');
+        const data = await res.json();
+        const tbody = document.querySelector('#monthlyTable tbody');
+        tbody.innerHTML = data.map(m => `
+            <tr>
+                <td>${m.month}</td>
+                <td style="font-family:'Syne',sans-serif;font-weight:600;">${formatCurrencyFull(m.total)}</td>
+                <td>${m.count}</td>
+                <td>${m.top_category}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        showToast('Failed to load monthly data', 'error');
+    }
+}
+
+function closeMonthlyModal() {
+    document.getElementById('monthlyModal').classList.remove('open');
+}
+
+function formatCurrency(amount) {
+    const num = parseFloat(amount);
+    if (num >= 100000) {
+        return '₹' + (num / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+    } else if (num >= 1000) {
+        return '₹' + (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    } else {
+        return '₹' + Math.round(num);
+    }
+}
+
+function formatCurrencyFull(amount) {
+    const num = parseFloat(amount);
+    return '₹' + Math.round(num).toLocaleString('en-IN');
+}
+
+loadDashboard();
+</script>
+{% endblock %}

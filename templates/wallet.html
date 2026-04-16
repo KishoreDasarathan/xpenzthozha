@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}Wallet — InvestBro{% endblock %}
+{% block page_title %}Wallet Manager{% endblock %}
+
+{% block head %}
+<style>
+.wallet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.wallet-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: all 0.2s;
+    min-width: 0;
+}
+.wallet-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+.wallet-card.default { border-color: var(--accent-gold); box-shadow: 0 0 0 1px rgba(255,184,0,0.2); }
+
+.wallet-header { 
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+.wallet-info { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    flex: 1;
+    min-width: 0;
+}
+.wallet-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.wallet-name { 
+    font-size: 15px; 
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wallet-type { 
+    font-size: 11px; 
+    color: var(--text-muted); 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+}
+.wallet-balance { 
+    font-family: 'Syne', sans-serif; 
+    font-size: 20px; 
+    font-weight: 800; 
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: 12px;
+}
+.wallet-actions { 
+    display: flex; 
+    gap: 6px;
+    flex-shrink: 0;
+}
+.wallet-actions .btn-sm {
+    padding: 6px 10px;
+    font-size: 11px;
+}
+.default-badge {
+    position: absolute; 
+    top: -8px; 
+    right: 12px;
+    background: var(--accent-gold); 
+    color: #000;
+    font-size: 9px; 
+    font-weight: 700; 
+    padding: 2px 6px; 
+    border-radius: 4px;
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;
+    z-index: 2;
+}
+.total-balance-card {
+    background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(155,89,245,0.08));
+    border: 1px solid rgba(79,142,247,0.3);
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+.total-balance-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 8px; }
+.total-balance-value { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 800; color: var(--accent-green); }
+
+@media (max-width: 480px) {
+    .wallet-header { flex-wrap: wrap; }
+    .wallet-balance { font-size: 18px; }
+    .wallet-actions .btn-sm span { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="total-balance-card fade-in-up">
+    <div class="total-balance-label">Total Wallet Balance</div>
+    <div class="total-balance-value" id="totalBalance">₹0</div>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <h3 style="font-family:'Syne',sans-serif;font-size:18px;">My Wallets</h3>
+    <button class="btn btn-gold" onclick="openWalletModal()">
+        <i class="fas fa-plus"></i> Add Wallet
+    </button>
+</div>
+
+<div class="wallet-grid" id="walletGrid">
+    <div class="loading-state" style="grid-column:1/-1;"><div class="spinner"></div> Loading wallets...</div>
+</div>
+
+<!-- Add/Edit Wallet Modal -->
+<div class="modal-overlay" id="walletModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title" id="modalTitle">Add Wallet</div>
+            <button class="modal-close" onclick="closeWalletModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="walletForm">
+            <input type="hidden" id="walletId">
+            <div class="form-group">
+                <label class="form-label">Wallet Name</label>
+                <input type="text" class="form-control" id="walletName" placeholder="HDFC Savings" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-control" id="walletType">
+                    <option value="bank">Bank Account</option>
+                    <option value="cash">Cash</option>
+                    <option value="upi">UPI</option>
+                    <option value="crypto">Crypto</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Current Balance</label>
+                <input type="number" class="form-control" id="walletBalance" placeholder="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Color</label>
+                <input type="color" class="form-control" id="walletColor" value="#4F8EF7">
+            </div>
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="walletDefault">
+                    <span style="font-size:13px;">Set as default wallet</span>
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">
+                <i class="fas fa-save"></i> Save Wallet
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let wallets = [];
+
+async function loadWallets() {
+    try {
+        const res = await fetch('/api/wallets');
+        const data = await res.json();
+        wallets = data.wallets;
+        document.getElementById('totalBalance').textContent = formatCurrencyFull(data.total_balance);
+        renderWallets();
+    } catch (e) {
+        showToast('Failed to load wallets', 'error');
+    }
+}
+
+function renderWallets() {
+    const grid = document.getElementById('walletGrid');
+    if (!wallets.length) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-wallet"></i><h3>No wallets yet</h3><p>Add your first wallet to track balances</p></div>';
+        return;
+    }
+    
+    grid.innerHTML = wallets.map(w => `
+        <div class="wallet-card ${w.is_default ? 'default' : ''}">
+            ${w.is_default ? '<div class="default-badge">Default</div>' : ''}
+            <div class="wallet-header">
+                <div class="wallet-info">
+                    <div class="wallet-icon" style="background:${w.color}20;color:${w.color}">
+                        <i class="${w.icon}"></i>
+                    </div>
+                    <div style="min-width:0;">
+                        <div class="wallet-name">${w.name}</div>
+                        <div class="wallet-type">${w.wallet_type}</div>
+                    </div>
+                </div>
+                <div class="wallet-balance" style="color:${w.color}">${formatCurrencyFull(w.balance)}</div>
+                <div class="wallet-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="editWallet(${w.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteWallet(${w.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openWalletModal(id = null) {
+    document.getElementById('walletForm').reset();
+    document.getElementById('walletId').value = id || '';
+    document.getElementById('modalTitle').textContent = id ? 'Edit Wallet' : 'Add Wallet';
+    
+    if (id) {
+        const w = wallets.find(x => x.id === id);
+        document.getElementById('walletName').value = w.name;
+        document.getElementById('walletType').value = w.wallet_type;
+        document.getElementById('walletBalance').value = w.balance;
+        document.getElementById('walletColor').value = w.color;
+        document.getElementById('walletDefault').checked = w.is_default;
+    }
+    
+    document.getElementById('walletModal').classList.add('open');
+}
+
+function closeWalletModal() {
+    document.getElementById('walletModal').classList.remove('open');
+}
+
+function editWallet(id) {
+    openWalletModal(id);
+}
+
+async function deleteWallet(id) {
+    if (!confirm('Delete this wallet?')) return;
+    try {
+        const res = await fetch(`/api/wallets/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Wallet deleted');
+            loadWallets();
+        } else {
+            showToast(data.message || 'Failed to delete', 'error');
+        }
+    } catch (e) {
+        showToast('Error deleting wallet', 'error');
+    }
+}
+
+document.getElementById('walletForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('walletId').value;
+    const payload = {
+        name: document.getElementById('walletName').value,
+        wallet_type: document.getElementById('walletType').value,
+        balance: document.getElementById('walletBalance').value || 0,
+        color: document.getElementById('walletColor').value,
+        is_default: document.getElementById('walletDefault').checked
+    };
+    
+    try {
+        const url = id ? `/api/wallets/${id}` : '/api/wallets';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(id ? 'Wallet updated' : 'Wallet created');
+            closeWalletModal();
+            loadWallets();
+        } else {
+            showToast('Failed to save wallet', 'error');
+        }
+    } catch (e) {
+        showToast('Error saving wallet', 'error');
+    }
+});
+
+loadWallets();
+</script>
+{% endblock %}

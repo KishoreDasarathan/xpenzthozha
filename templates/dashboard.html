@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — InvestPro{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+/* === TOP BAR === */
+.dashboard-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.dashboard-topbar h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+.invest-dash-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 15px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-green), #00C389);
+    color: #000;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0,229,160,0.3);
+    transition: all 0.2s;
+}
+.invest-dash-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,229,160,0.4);
+}
+
+/* === WALLET BAR === */
+.wallet-bar {
+    background: linear-gradient(135deg, #0E1628 0%, #0A1020 100%);
+    border: 1px solid rgba(79,142,247,0.2);
+    border-radius: 18px;
+    padding: 18px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.wallet-total { display: flex; align-items: center; gap: 14px; }
+.wallet-total-icon {
+    width: 42px; height: 42px;
+    background: rgba(79,142,247,0.15);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent-blue);
+    font-size: 18px;
+}
+.wallet-total-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.wallet-total-val { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--accent-blue); letter-spacing: -1px; }
+.wallet-list { display: flex; gap: 10px; flex-wrap: wrap; }
+.wallet-chip {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    text-align: center;
+    min-width: 95px;
+}
+.wallet-chip-name { font-size: 9px; color: var(--text-muted); margin-bottom: 2px; }
+.wallet-chip-val { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; }
+
+/* === 2-COLUMN GRID === */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+.dash-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px 20px;
+}
+
+/* === HERO === */
+.hero-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-bottom: 4px; }
+.hero-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1;
+    color: var(--accent-blue);
+    margin-bottom: 14px;
+}
+.hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.hero-stat {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+}
+.hero-stat-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.hero-stat-val { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-top: 3px; }
+
+/* === CHART === */
+.chart-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.chart-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.chart-subtitle { font-size: 10px; color: var(--text-muted); }
+.chart-filters { display: flex; gap: 4px; }
+.filter-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+    padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 600; cursor: pointer;
+}
+.filter-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+.chart-body { height: 200px; position: relative; }
+
+/* === FIXED DONUT: SMALLER === */
+.donut-wrap { 
+    display: grid; 
+    grid-template-columns: 85px 1fr; 
+    gap: 12px; 
+    align-items: center; 
+    height: 100%;
+}
+.donut-legend { max-height: 85px; overflow-y: auto; padding-right: 4px; }
+.legend-item { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; font-size: 10px; }
+.legend-dot-wrap { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.legend-pct { font-family: 'Syne', sans-serif; font-weight: 600; }
+
+/* === RECENT LIST === */
+.recent-list { max-height: 240px; overflow-y: auto; }
+.recent-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(42,42,56,0.4); }
+.recent-item:last-child { border-bottom: none; }
+.recent-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.recent-details { flex: 1; min-width: 0; }
+.recent-name { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-meta { font-size: 9px; color: var(--text-muted); margin-top: 1px; }
+.recent-amt { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.recent-amt.positive { color: var(--accent-green); }
+.recent-amt.negative { color: var(--danger); }
+
+/* === RESPONSIVE === */
+@media (max-width: 1200px) {
+   .content-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+   .hero-stats { grid-template-columns: 1fr; }
+   .hero-value { font-size: 24px; }
+   .wallet-bar { flex-direction: column; gap: 12px; text-align: center; }
+   .donut-wrap { grid-template-columns: 1fr; }
+   .dashboard-topbar { flex-direction: column; gap: 12px; align-items: stretch; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Trial Banner -->
+{% if user.subscription_status == 'trial' and user.is_subscription_valid() %}
+<div style="background:linear-gradient(135deg, #4F8EF7 0%, #9B59F5 100%);padding:16px 20px;border-radius:12px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-gift" style="font-size:24px;"></i>
+        <div>
+            <div style="font-weight:700;font-size:15px;">You're on a Free Trial</div>
+            <div style="font-size:13px;opacity:0.9;">
+                {% if trial_days_left > 0 %}
+                    {{ trial_days_left }} days remaining. Expires {{ trial_end_date.strftime('%d %b %Y') }}
+                {% else %}
+                    Trial expires today!
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <a href="{{ url_for('main.pricing') }}" class="btn" style="background:white;color:#4F8EF7;padding:10px 20px;font-weight:600;">
+        View Plans
+    </a>
+</div>
+{% elif not user.is_subscription_valid() and not user.is_admin %}
+<div style="background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%);padding:16px 20px;border-radius:12px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-exclamation-triangle" style="font-size:24px;"></i>
+        <div>
+            <div style="font-weight:700;font-size:15px;">Subscription Expired</div>
+            <div style="font-size:13px;opacity:0.9;">Upgrade to continue using all features</div>
+        </div>
+    </div>
+    <a href="{{ url_for('main.pricing') }}" class="btn" style="background:white;color:#ef4444;padding:10px 20px;font-weight:600;">
+        Renew Now
+    </a>
+</div>
+{% endif %}
+
+
+<!-- WALLET BAR -->
+<div class="wallet-bar fade-in-up delay-1">
+    <div class="wallet-total">
+        <div class="wallet-total-icon"><i class="fas fa-wallet"></i></div>
+        <div>
+            <div class="wallet-total-label">Total Wallet Balance</div>
+            <div class="wallet-total-val" id="totalWalletBalance">₹0</div>
+        </div>
+    </div>
+    <div class="wallet-list" id="walletList">
+        <div class="spinner"></div>
+    </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="content-grid">
+    <!-- LEFT: NET BALANCE + SPEND ANALYSIS -->
+    <div class="dash-col">
+        <div class="card fade-in-up">
+            <div class="hero-label">Net Available Balance</div>
+            <div class="hero-value" id="netBalance" style="color:var(--accent-blue);margin-bottom:12px;">₹0</div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Income</div>
+                    <div class="hero-stat-val" style="color:var(--accent-green)" id="monthlyIncome">₹0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Expenses</div>
+                    <div class="hero-stat-val" style="color:var(--danger)" id="monthlyExpenses">₹0</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Invested</div>
+                    <div class="hero-stat-val" style="color:var(--accent-gold)" id="monthlyInvested">₹0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card fade-in-up delay-1">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Spend Analysis</div>
+                    <div class="chart-subtitle" id="spendAnalysisMonth">This Month</div>
+                </div>
+                <div class="chart-body" style="height:150px;">
+                    <div class="donut-wrap">
+                        <canvas id="spendChart"></canvas>
+                        <div class="donut-legend" id="spendLegend"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: CASHFLOW + RECENT INCOME -->
+    <div class="dash-col">
+        <div class="card fade-in-up delay-1">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Cashflow Trend</div>
+                    <div class="chart-filters">
+                        <button class="filter-btn" onclick="updateCashflowPeriod(3, this)">3M</button>
+                        <button class="filter-btn active" onclick="updateCashflowPeriod(6, this)">6M</button>
+                        <button class="filter-btn" onclick="updateCashflowPeriod(12, this)">1Y</button>
+                        <button class="filter-btn" onclick="updateCashflowPeriod(0, this)">All</button>
+                    </div>
+                </div>
+                <div class="chart-body"><canvas id="cashflowChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card fade-in-up delay-2">
+            <div class="chart-header">
+                <div class="chart-title">Recent Income</div>
+                <a href="/add-transaction" class="btn btn-ghost btn-sm"><i class="fas fa-plus"></i></a>
+            </div>
+            <div class="recent-list" id="recentIncome">
+                <div class="loading-state"><div class="spinner"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let spendChart, cashflowChart;
+let dashData = {};
+let currentCashflowPeriod = 6;
+
+async function loadDashboard() {
+    try {
+        const res = await fetch('/api/dashboard-stats');
+        if (!res.ok) throw new Error('API failed: ' + res.status);
+        dashData = await res.json();
+        console.log('Dashboard data:', dashData);
+
+        // Wallets
+        document.getElementById('totalWalletBalance').textContent = formatCurrencyFull(dashData.wallets?.total_balance || 0);
+        const walletList = document.getElementById('walletList');
+        if (dashData.wallets?.list?.length) {
+            walletList.innerHTML = dashData.wallets.list.map(w => `
+                <div class="wallet-chip">
+                    <div class="wallet-chip-name">${w.name}</div>
+                    <div class="wallet-chip-val" style="color:${w.color}">${formatCurrencyFull(w.balance)}</div>
+                </div>
+            `).join('');
+        } else {
+            walletList.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">No wallets</div>';
+        }
+
+        // Net Balance - this month totals
+        document.getElementById('monthlyIncome').textContent = formatCurrencyFull(dashData.monthly_income || 0);
+        document.getElementById('monthlyExpenses').textContent = formatCurrencyFull(dashData.monthly_expenses || 0);
+        document.getElementById('monthlyInvested').textContent = formatCurrencyFull(dashData.monthly || 0);
+        const netBal = (dashData.monthly_income || 0) - (dashData.monthly_expenses || 0) - (dashData.monthly || 0);
+        document.getElementById('netBalance').textContent = formatCurrencyFull(netBal);
+        document.getElementById('netBalance').style.color = netBal >= 0? 'var(--accent-blue)' : 'var(--danger)';
+        document.getElementById('spendAnalysisMonth').textContent = new Date().toLocaleString('default', {month:'long'});
+
+        // Charts
+        renderSpendChart();
+        renderCashflowChart();
+        renderRecentIncome();
+
+    } catch (e) {
+        console.error('Dashboard load error:', e);
+        showToast('Failed to load dashboard: ' + e.message, 'error');
+    }
+}
+
+function renderSpendChart() {
+    const ctx = document.getElementById('spendChart').getContext('2d');
+    if (spendChart) spendChart.destroy();
+
+    const cats = (dashData.expense_categories || []).filter(c => parseFloat(c.total_spent) > 0);
+    if (!cats.length) {
+        document.getElementById('spendLegend').innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:10px;">No expenses this month</div>';
+        return;
+    }
+
+    const total = cats.reduce((s, c) => s + parseFloat(c.total_spent), 0);
+    spendChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: cats.map(c => c.name),
+            datasets: [{ data: cats.map(c => parseFloat(c.total_spent)), backgroundColor: cats.map(c => c.color), borderWidth: 0 }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            layout: { padding: 2 },
+            plugins: { legend: { display: false }, tooltip: {
+                backgroundColor: '#16161E',
+                callbacks: { label: ctx => ' ₹' + ctx.raw.toLocaleString('en-IN') }
+            }}
+        }
+    });
+
+    document.getElementById('spendLegend').innerHTML = cats.map(c => {
+        const pct = total > 0? ((parseFloat(c.total_spent)/total)*100).toFixed(1) : 0;
+        return `<div class="legend-item">
+            <div class="legend-dot-wrap"><div class="legend-dot" style="background:${c.color}"></div>${c.name}</div>
+            <div class="legend-pct" style="color:${c.color}">${pct}%</div>
+        </div>`;
+    }).join('');
+}
+
+function renderCashflowChart() {
+    const ctx = document.getElementById('cashflowChart').getContext('2d');
+    if (cashflowChart) cashflowChart.destroy();
+
+    let trend = dashData.monthly_trend || [];
+    trend = currentCashflowPeriod === 0? trend : trend.slice(-currentCashflowPeriod);
+    const labels = trend.map(t => {
+        const [y, m] = t.month.split('-');
+        return new Date(y, m-1).toLocaleString('default', {month:'short'});
+    });
+
+    cashflowChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Income',
+                    data: trend.map(t => parseFloat(t.income) || 0),
+                    borderColor: 'rgba(0,229,160,0.9)',
+                    backgroundColor: 'rgba(0,229,160,0.1)',
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 3
+                },
+                {
+                    label: 'Expense',
+                    data: trend.map(t => parseFloat(t.expense) || 0),
+                    borderColor: 'rgba(255,71,87,0.9)',
+                    backgroundColor: 'rgba(255,71,87,0.1)',
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'Invested',
+                    data: trend.map(t => parseFloat(t.total) || 0),
+                    borderColor: 'rgba(255,184,0,0.9)',
+                    backgroundColor: 'rgba(255,184,0,0.1)',
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'bottom', labels: { color: '#888', font: { size: 9 } } } },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#555570', font: { size: 9 } } },
+                y: { grid: { color: 'rgba(42,42,56,0.5)' }, ticks: { color: '#555570', font: { size: 9 },
+                    callback: v => v >= 100000? '₹' + (v/100000).toFixed(1) + 'L' : v >= 1000? '₹' + (v/1000).toFixed(0) + 'K' : '₹' + v
+                } }
+            }
+        }
+    });
+}
+
+function renderRecentIncome() {
+    const el = document.getElementById('recentIncome');
+    const incomes = dashData.recent_incomes || [];
+    if (!incomes.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:11px;padding:20px;">No income yet</div>';
+        return;
+    }
+    el.innerHTML = incomes.slice(0, 2).map(i => {
+        const bg = (i.wallet_color || '#4F8EF7') + '20';
+        return `<div class="recent-item">
+            <div class="recent-icon" style="background:${bg};color:${i.wallet_color || '#4F8EF7'}">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+            <div class="recent-details">
+                <div class="recent-name">${i.description || 'Income'}</div>
+                <div class="recent-meta">${formatDate(i.income_date)} · ${i.wallet_name}</div>
+            </div>
+            <div class="recent-amt positive">+${formatCurrencyFull(i.amount)}</div>
+        </div>`;
+    }).join('');
+}
+
+function updateCashflowPeriod(months, btn) {
+    currentCashflowPeriod = months === 0? 999 : months;
+    document.querySelectorAll('.chart-filters .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCashflowChart();
+}
+
+function formatCurrencyFull(amount) {
+    const num = parseFloat(amount) || 0;
+    return '₹' + Math.round(num).toLocaleString('en-IN');
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('en-IN', {day: '2-digit', month: 'short'});
+}
+
+loadDashboard();
+</script>
+{% endblock %}

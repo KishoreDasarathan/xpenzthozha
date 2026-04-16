@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% block title %}Categories — InvestPro{% endblock %}
+{% block page_title %}Categories{% endblock %}
+
+{% block head %}
+<style>
+/* === GLOBAL MOBILE FIX === */
+html, body {
+    overflow-x: hidden!important;
+    width: 100%;
+    max-width: 100vw;
+}
+* {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.cat-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+    padding: 10px 14px;
+    border-radius: 8px 8px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--text-muted);
+    background: transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.cat-tab.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+.cat-tab:hover { color: var(--text-primary); }
+.tab-panel { display: none; width: 100%; }
+.tab-panel.active { display: block; }
+
+.category-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+.category-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    transition: all 0.2s;
+    width: 100%;
+    min-width: 0;
+}
+.category-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+.cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 8px;
+}
+.cat-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+.cat-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+.cat-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cat-desc {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cat-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.cat-stats {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+.cat-stat { text-align: center; flex: 1; }
+.cat-stat-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.cat-stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 3px;
+    word-break: break-word;
+}
+
+.add-cat-card {
+    background: var(--bg-card);
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 160px;
+}
+.add-cat-card:hover { border-color: var(--accent-blue); background: rgba(79,142,247,0.03); }
+.add-cat-card i { font-size: 28px; color: var(--text-muted); margin-bottom: 10px; }
+
+.section-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* === MODAL FIXES === */
+.modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    width: 90vw;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: modalIn 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.modal-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+.icon-opt {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.icon-opt:hover { border-color: var(--accent-blue); }
+.icon-opt.selected { background: rgba(79,142,247,0.15); border-color: var(--accent-blue); }
+.color-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+.color-swatch {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch.selected { border-color: white; transform: scale(1.05); box-shadow: 0 6px rgba(255,255,255,0.3); }
+
+.form-group { margin-bottom: 14px; }
+.form-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: inherit;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+/* === DESKTOP OVERRIDES === */
+@media (min-width: 768px) {
+    .category-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .section-title { font-size: 18px; }
+    .cat-tab { padding: 12px 20px; font-size: 13px; }
+    .icon-grid { grid-template-columns: repeat(6, 1fr); gap: 8px; }
+    .icon-opt { font-size: 16px; }
+    .color-swatch { width: 32px; height: 32px; }
+    .modal { padding: 24px; max-width: 550px; }
+    .modal-title { font-size: 18px; }
+    .form-label { font-size: 12px; }
+    .form-control { font-size: 13px; padding: 11px 14px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1400px;margin:0 auto;width:100%;">
+
+<!-- TABS -->
+<div class="cat-tabs">
+    <button class="cat-tab active" onclick="switchCatTab('investment')">
+        <i class="fas fa-chart-line"></i> Investment Categories
+    </button>
+    <button class="cat-tab" onclick="switchCatTab('expense')">
+        <i class="fas fa-receipt"></i> Expense Categories
+    </button>
+</div>
+
+<!-- INVESTMENT CATEGORIES PANEL -->
+<div class="tab-panel active" id="panel-investment">
+    <div class="section-header">
+        <div class="section-title">Investment Categories</div>
+        <button class="btn btn-gold btn-sm" onclick="openCatModal('investment')">
+            <i class="fas fa-plus"></i> Add Category
+        </button>
+    </div>
+    <div class="category-grid" id="invCatGrid">
+        <div class="loading-state" style="grid-column:1/-1;"><div class="spinner"></div></div>
+    </div>
+</div>
+
+<!-- EXPENSE CATEGORIES PANEL -->
+<div class="tab-panel" id="panel-expense">
+    <div class="section-header">
+        <div class="section-title">Expense Categories</div>
+        <button class="btn btn-gold btn-sm" onclick="openCatModal('expense')">
+            <i class="fas fa-plus"></i> Add Category
+        </button>
+    </div>
+    <div class="category-grid" id="expCatGrid">
+        <div class="loading-state" style="grid-column:1/-1;"><div class="spinner"></div></div>
+    </div>
+</div>
+
+<!-- ADD/EDIT CATEGORY MODAL -->
+<div class="modal-overlay" id="catModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title" id="catModalTitle">Add Category</div>
+            <button class="modal-close" onclick="closeCatModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="catForm">
+            <input type="hidden" id="catId">
+            <input type="hidden" id="catType">
+            <div class="form-group">
+                <label class="form-label">Category Name</label>
+                <input type="text" class="form-control" id="catName" placeholder="e.g. Real Estate, Food" required>
+            </div>
+            <div class="form-group" id="descGroup">
+
+            </div>
+            <div class="form-group">
+                <label class="form-label">Icon</label>
+                <div class="icon-grid" id="iconGrid"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Color</label>
+                <div class="color-grid" id="colorGrid"></div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">
+                <i class="fas fa-save"></i> Save Category
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ICONS = ['fas fa-coins','fas fa-chart-line','fas fa-medal','fas fa-piggy-bank','fas fa-landmark','fas fa-home','fas fa-car','fas fa-utensils','fas fa-shopping-bag','fas fa-film','fas fa-heartbeat','fas fa-graduation-cap','fas fa-plane','fas fa-dumbbell','fas fa-paw','fas fa-wallet','fas fa-briefcase','fas fa-gem'];
+const COLORS = ['#FFB800','#00E5A0','#4F8EF7','#9B59F5','#FF4757','#94A3B8','#FF6B35','#00C9FF','#FD7272','#A29BFE','#55EFC4','#FDCB6E'];
+
+let invCats = [];
+let expCats = [];
+let selectedIcon = 'fas fa-wallet';
+let selectedColor = '#4F8EF7';
+let currentType = 'investment';
+
+// Build pickers
+document.getElementById('iconGrid').innerHTML = ICONS.map(ic =>
+    `<div class="icon-opt ${ic===selectedIcon?'selected':''}" data-icon="${ic}" onclick="pickIcon('${ic}')"><i class="${ic}"></i></div>`
+).join('');
+
+document.getElementById('colorGrid').innerHTML = COLORS.map(c =>
+    `<div class="color-swatch ${c===selectedColor?'selected':''}" data-color="${c}" style="background:${c}" onclick="pickColor('${c}')"></div>`
+).join('');
+
+function pickIcon(ic) {
+    selectedIcon = ic;
+    document.querySelectorAll('.icon-opt').forEach(el => el.classList.toggle('selected', el.dataset.icon===ic));
+}
+function pickColor(c) {
+    selectedColor = c;
+    document.querySelectorAll('.color-swatch').forEach(el => el.classList.toggle('selected', el.dataset.color===c));
+}
+
+function switchCatTab(type) {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    event.target.closest('.cat-tab').classList.add('active');
+    document.getElementById('panel-' + type).classList.add('active');
+    if (type === 'investment') loadInvCats();
+    else loadExpCats();
+}
+
+async function loadInvCats() {
+    try {
+        const res = await fetch('/api/categories');
+        invCats = await res.json();
+        renderCatGrid(invCats, 'invCatGrid', 'investment');
+    } catch(e) { 
+        document.getElementById('invCatGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-exclamation-triangle"></i><p>Failed to load investment categories</p></div>';
+    }
+}
+
+async function loadExpCats() {
+    try {
+        const res = await fetch('/api/expense-categories');
+        expCats = await res.json();
+        renderCatGrid(expCats, 'expCatGrid', 'expense');
+    } catch(e) { 
+        document.getElementById('expCatGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-exclamation-triangle"></i><p>Failed to load expense categories</p></div>';
+    }
+}
+
+function renderCatGrid(cats, gridId, type) {
+    const grid = document.getElementById(gridId);
+    if (!cats.length) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-tags"></i><h3>No categories yet</h3><p>Create your first category to get started</p></div>';
+        return;
+    }
+    
+    grid.innerHTML = cats.map(cat => `
+        <div class="category-card">
+            <div class="cat-header">
+                <div class="cat-info">
+                    <div class="cat-icon" style="background:${cat.color}20;color:${cat.color}">
+                        <i class="${cat.icon}"></i>
+                    </div>
+                    <div style="min-width: 0; flex: 1;">
+                        <div class="cat-name">${cat.name}</div>
+                        ${cat.description ? `<div class="cat-desc">${cat.description}</div>` : ''}
+                    </div>
+                </div>
+                <div class="cat-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="editCat('${type}', ${cat.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteCat('${type}', ${cat.id}, '${cat.name}')" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="cat-stats">
+                <div class="cat-stat">
+                    <div class="cat-stat-label">Total ${type === 'investment' ? 'Invested' : 'Spent'}</div>
+                    <div class="cat-stat-val" style="color:${cat.color}">
+                        ${formatCurrencyFull(type === 'investment' ? cat.total_invested : cat.total_spent)}
+                    </div>
+                </div>
+                <div class="cat-stat">
+                    <div class="cat-stat-label">Entries</div>
+                    <div class="cat-stat-val">${type === 'investment' ? cat.investment_count : cat.expense_count}</div>
+                </div>
+            </div>
+        </div>
+    `).join('') + `
+    <div class="add-cat-card" onclick="openCatModal('${type}')">
+        <i class="fas fa-plus-circle"></i>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">New Category</div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Create a custom ${type} category</p>
+    </div>`;
+}
+
+function openCatModal(type, id = null) {
+    currentType = type;
+    document.getElementById('catForm').reset();
+    document.getElementById('catId').value = id || '';
+    document.getElementById('catType').value = type;
+    document.getElementById('catModalTitle').textContent = id ? 'Edit Category' : 'Add ' + (type === 'investment' ? 'Investment' : 'Expense') + ' Category';
+    document.getElementById('descGroup').style.display = type === 'investment' ? 'block' : 'none';
+    
+    if (id) {
+        const cat = (type === 'investment' ? invCats : expCats).find(c => c.id === id);
+        document.getElementById('catName').value = cat.name;
+        document.getElementById('catDesc').value = cat.description || '';
+        selectedIcon = cat.icon || 'fas fa-wallet';
+        selectedColor = cat.color || '#4F8EF7';
+        document.querySelectorAll('.icon-opt').forEach(el => el.classList.toggle('selected', el.dataset.icon===selectedIcon));
+        document.querySelectorAll('.color-swatch').forEach(el => el.classList.toggle('selected', el.dataset.color===selectedColor));
+    }
+    
+    document.getElementById('catModal').classList.add('open');
+}
+
+function closeCatModal() {
+    document.getElementById('catModal').classList.remove('open');
+}
+
+function editCat(type, id) {
+    openCatModal(type, id);
+}
+
+async function deleteCat(type, id, name) {
+    if (!confirm(`Delete "${name}"? All related entries must be moved first.`)) return;
+    try {
+        const endpoint = type === 'investment' ? `/api/categories/${id}` : `/api/expense-categories/${id}`;
+        const res = await fetch(endpoint, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Category deleted');
+            if (type === 'investment') loadInvCats();
+            else loadExpCats();
+        } else {
+            showToast(data.message || 'Failed to delete', 'error');
+        }
+    } catch (e) {
+        showToast('Error deleting category', 'error');
+    }
+}
+
+document.getElementById('catForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('catId').value;
+    const type = document.getElementById('catType').value;
+    
+    const payload = {
+        name: document.getElementById('catName').value,
+        icon: selectedIcon,
+        color: selectedColor
+    };
+    
+    if (type === 'investment') {
+        payload.description = document.getElementById('catDesc').value;
+    }
+    
+    try {
+        const baseUrl = type === 'investment' ? '/api/categories' : '/api/expense-categories';
+        const url = id ? `${baseUrl}/${id}` : baseUrl;
+        const method = id ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(id ? 'Category updated' : 'Category created');
+            closeCatModal();
+            if (type === 'investment') loadInvCats();
+            else loadExpCats();
+        } else {
+            showToast('Failed to save category', 'error');
+        }
+    } catch (e) {
+        showToast('Error saving category', 'error');
+    }
+});
+
+// Initial load
+loadInvCats();
+</script>
+{% endblock %}
